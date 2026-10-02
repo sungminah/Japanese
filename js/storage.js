@@ -16,6 +16,7 @@
     prog: {},        // region id -> { g, v, k, r } correct answers inside that region's study content
     unlocked: { kanto: true }, // regions you can travel to
     badges: {},      // region id -> true once its Gym Leader exam is passed
+    reports: {},     // question id -> { note, text, answer, en, ts } flagged by you; hidden from quizzes
     wrong: {},       // question id -> times answered wrong (not yet cleared)
     right: {},       // question id -> times answered right
     placement: null  // { score, total, byDifficulty, ts }
@@ -36,6 +37,7 @@
     });
     s.unlocked = Object.assign({ kanto: true }, s.unlocked);
     s.badges = s.badges || {};
+    s.reports = s.reports || {};
     Object.keys(s.caught).forEach((id) => { if (!s.dex[id]) s.dex[id] = { shiny: !!s.caught[id].shiny }; });
     return s;
   }

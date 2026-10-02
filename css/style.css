@@ -204,3 +204,7 @@ label.toggle { cursor: pointer; user-select: none; }
 .arena.boss { box-shadow: 0 0 24px #f59e0b66; border-color: #fbbf24; }
 .btn:disabled.gold { filter: grayscale(.4); }
 @media (max-width: 640px) { .progress { grid-template-columns: 1fr; } }
+
+/* ---------- reports ---------- */
+.reportlist { max-height: 320px; overflow: auto; margin-top: 8px; display: grid; gap: 6px; }
+.reportitem { background: var(--glass2); border-radius: 10px; padding: 6px 10px; }

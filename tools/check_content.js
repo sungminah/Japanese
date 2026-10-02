@@ -6,7 +6,7 @@
 const fs = require("fs"), path = require("path");
 global.window = {};
 const load = (f) => { const p = path.join(__dirname, "..", "js", f); if (fs.existsSync(p)) require(p); };
-["pokemon.js", "data-n5.js", "data-n5-more.js", "data-n4.js", "data-n4-more.js", "data-vocab-n5.js", "data-vocab-n4.js", "data-kanji.js", "data-kanji-n4.js", "data-romaji.js", "data-romaji-n4.js", "romaji.js"].forEach(load);
+["pokemon.js", "data-n5.js", "data-n5-more.js", "data-n4.js", "data-n4-more.js", "data-vocab-n5.js", "data-vocab-n4.js", "data-kanji.js", "data-kanji-n4.js", "data-romaji.js", "data-romaji-n4.js", "data-romaji-n4-more.js", "romaji.js"].forEach(load);
 const W = window;
 let problems = 0;
 const bad = (m) => { console.log("PROBLEM:", m); problems++; };
@@ -24,7 +24,7 @@ const byLv = {};
 console.log("written questions:", JSON.stringify(byLv));
 
 // 2. romaji sentences
-const plain = (s) => W.Romaji.toHira(s.replace(/\{([^|}]+)\|([^}]+)\}/g, "$2").replace(/[。、？！]/g, ""));
+const plain = (s) => W.Romaji.toHira(s.replace(/\{([^|}]+)\|([^}]+)\}/g, "$2").replace(/[。、？！「」]/g, ""));
 const rids = new Set();
 (W.ROMAJI_SENTENCES || []).forEach((x) => {
   if (rids.has(x.id)) bad("duplicate romaji id " + x.id); rids.add(x.id);

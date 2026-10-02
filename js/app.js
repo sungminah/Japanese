@@ -68,6 +68,7 @@
   // Questions answered wrong before are weighted heavier so they come back for review.
   function pickQuestions(pool, n) {
     const st = S();
+    pool = pool.filter((q) => !st.reports[q.id]);
     return pool.map((q) => ({ q, k: Math.random() * Math.max(0.2, 1 + (st.wrong[q.id] || 0) * 3 - Math.min(st.right[q.id] || 0, 3) * 0.2) }))
       .sort((x, y) => y.k - x.k).slice(0, n).map((x) => x.q);
   }
@@ -160,6 +161,26 @@
     return chip(t, `+${candy} ${SKILLS[t].candy}`) + chip("xp", "+10 XP") + lvUp + (combo >= 3 ? chip("combo", `🔥 combo ×${combo}`) : "");
   }
 
+  // ---------- reporting questions ----------
+  const questionText = (q) => (q.t === "r" ? Ruby.plain(q.s) : (q.p ? q.p + " " : "") + Ruby.plain(q.q));
+  const answerText = (q) => (q.t === "r" ? Romaji.expectedVariants(q.k)[0] : Ruby.plain(q.c[q.a]));
+  function reportButton(q) {
+    const done = !!S().reports[q.id];
+    return `<div style="margin-top:8px"><button class="linkbtn" id="report" ${done ? "disabled" : ""}>${done ? "🚩 Reported — hidden from future quizzes" : "🚩 Report a problem with this question"}</button></div>`;
+  }
+  function bindReport(q) {
+    const b = document.getElementById("report");
+    if (!b || b.disabled) return;
+    b.addEventListener("click", () => {
+      const note = window.prompt("What looks wrong with this question? (optional)\nIt will be hidden from your future quizzes, and you can send the list to be fixed.", "");
+      if (note === null) return;
+      S().reports[q.id] = { note: note.trim(), text: questionText(q), answer: answerText(q), en: q.en || "", ts: Date.now() };
+      Store.save();
+      b.textContent = "🚩 Reported — hidden from future quizzes";
+      b.disabled = true;
+    });
+  }
+
   // ---------- quiz runner (used by encounters and the placement test) ----------
   function questionHTML(it, i, total, combo) {
     const q = it.q;
@@ -199,7 +220,9 @@
       const fb = document.getElementById("fb");
       fb.innerHTML = `<div class="verdict ${ok ? "good" : "bad"}">${ok ? "✅ Correct!" : "❌ Not quite."}</div>${fbHTML}
         ${rewardHTML ? `<div class="rewards">${rewardHTML}</div>` : ""}
-        <div style="margin-top:12px"><button class="btn gold" id="next">${i + 1 < items.length ? "Next ▶" : "Finish ▶"}</button></div>`;
+        <div style="margin-top:12px"><button class="btn gold" id="next">${i + 1 < items.length ? "Next ▶" : "Finish ▶"}</button></div>
+        ${reportButton(it.q)}`;
+      bindReport(it.q);
       document.getElementById("next").addEventListener("click", () => { i++; i < items.length ? show() : (setKeys(null), onDone(correct, results, maxCombo)); });
       document.getElementById("next").focus();
     };
@@ -701,7 +724,7 @@
     $app.querySelectorAll("[data-claim]").forEach((b) => b.addEventListener("click", () => claimLegend(+b.dataset.claim)));
   }
   function settings() {
-    const st = S();
+    const st = S(), reps = Object.entries(st.reports);
     render(`<section class="panel"><h2 class="pixel">Settings</h2>
       <label class="toggle"><input type="checkbox" id="furi" ${st.furigana ? "checked" : ""}> Show furigana (readings above kanji) in grammar and vocabulary questions</label>
       <div class="muted small">The romaji exercise always shows furigana.</div>
@@ -710,7 +733,28 @@
         <button class="btn small" id="imp">Import progress</button>
         <button class="btn small danger" id="rst">Reset everything</button></div>
       <textarea id="io" rows="6" style="width:100%;margin-top:10px;display:none" placeholder="Paste exported progress here, then press Import again"></textarea>
-      <div style="margin-top:12px"><button class="btn" data-go="home">Back</button></div></section>`);
+      <div style="margin-top:12px"><button class="btn" data-go="home">Back</button></div></section>
+      <section class="panel"><h2 class="pixel">🚩 Reported questions (${reps.length})</h2>
+        ${reps.length ? `<div class="muted small">These are hidden from your quizzes. Copy the list and send it so they can be fixed.</div>
+          <div class="reportlist">${reps.map(([id, r]) => `<div class="reportitem"><b>${esc(id)}</b> ${esc(r.text)}<br>
+            <span class="muted small">Answer shown: ${esc(r.answer)}${r.note ? ` · Your note: ${esc(r.note)}` : ""}</span>
+            <button class="linkbtn" data-unreport="${esc(id)}">Restore</button></div>`).join("")}</div>
+          <div class="row" style="margin-top:8px"><button class="btn small" id="copyrep">Copy list to send</button>
+            <button class="btn small" id="clearrep">Restore all</button></div>
+          <textarea id="repbox" rows="6" style="width:100%;margin-top:8px;display:none"></textarea>`
+        : '<div class="muted small">Nothing reported. Use the 🚩 link under a question if something looks wrong.</div>'}
+      </section>`);
+    $app.querySelectorAll("[data-unreport]").forEach((b) => b.addEventListener("click", () => { delete st.reports[b.dataset.unreport]; Store.save(); settings(); }));
+    if (reps.length) {
+      document.getElementById("clearrep").addEventListener("click", () => { st.reports = {}; Store.save(); settings(); });
+      document.getElementById("copyrep").addEventListener("click", () => {
+        const text = reps.map(([id, r]) => `[${id}] ${r.text} -> ${r.answer}${r.en ? ` (${r.en})` : ""}${r.note ? ` | note: ${r.note}` : ""}`).join("\n");
+        const box = document.getElementById("repbox");
+        const show = () => { box.style.display = "block"; box.value = text; box.select(); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => { alert("Copied!"); }, show);
+        else show();
+      });
+    }
     document.getElementById("furi").addEventListener("change", (e) => { st.furigana = e.target.checked; Store.save(); });
     const io = document.getElementById("io");
     document.getElementById("exp").addEventListener("click", () => { io.style.display = "block"; io.value = Store.exportJSON(); io.select(); });
