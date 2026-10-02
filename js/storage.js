@@ -6,8 +6,10 @@
     xp: 0,
     balls: 5,
     streak: 0,
+    bestStreak: 0,
     lastDay: null,
     caught: {},      // pokemon id -> { n: copies owned, shiny: bool, at: time first obtained }
+    legends: {},     // legendary id -> true once claimed from a Legend quest
     dex: {},         // pokemon id -> { shiny } registered in the Pokédex (never removed)
     candy: { g: 0, v: 0, k: 0, r: 0 },                    // evolution candy per skill
     skill: { g: { c: 0, t: 0 }, v: { c: 0, t: 0 }, k: { c: 0, t: 0 }, r: { c: 0, t: 0 } }, // correct / total per skill
@@ -42,6 +44,7 @@
       const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
       state.streak = state.lastDay === y ? state.streak + 1 : 1;
       state.lastDay = t;
+      state.bestStreak = Math.max(state.bestStreak || 0, state.streak);
       save();
       return true;
     },

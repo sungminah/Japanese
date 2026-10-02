@@ -1,22 +1,30 @@
-// Gen 1 evolution lines. Each evolution costs candy of one skill type:
+// Evolution lines (generated pairs in pokemon.js). Each evolution costs candy of one skill type:
 // g = Grammar, v = Vocabulary, k = Kanji, r = Romaji.
 window.Evo = (function () {
-  const PAIRS = [[1,2],[2,3],[4,5],[5,6],[7,8],[8,9],[10,11],[11,12],[13,14],[14,15],[16,17],[17,18],[19,20],[21,22],[23,24],
-    [25,26],[27,28],[29,30],[30,31],[32,33],[33,34],[35,36],[37,38],[39,40],[41,42],[43,44],[44,45],[46,47],[48,49],[50,51],
-    [52,53],[54,55],[56,57],[58,59],[60,61],[61,62],[63,64],[64,65],[66,67],[67,68],[69,70],[70,71],[72,73],[74,75],[75,76],
-    [77,78],[79,80],[81,82],[84,85],[86,87],[88,89],[90,91],[92,93],[93,94],[96,97],[98,99],[100,101],[102,103],[104,105],
-    [109,110],[111,112],[116,117],[118,119],[120,121],[129,130],[133,134],[133,135],[133,136],[138,139],[140,141],[147,148],[148,149]];
   const TYPES = ["g", "v", "k", "r"];
-  const EEVEE = { 134: "v", 135: "k", 136: "g" };
-  const next = {}, hasPre = new Set();
-  PAIRS.forEach(([f, t]) => { (next[f] = next[f] || []).push(t); hasPre.add(t); });
+  const EEVEE = { 134: "v", 135: "k", 136: "g", 196: "r", 197: "v" };
+  const genOf = (id) => window.GEN_RANGES.findIndex((r) => id >= r[0] && id <= r[1]) + 1;
+  const next = {}, pre = {};
+  window.EVO_PAIRS.forEach(([f, t]) => { (next[f] = next[f] || []).push(t); (pre[t] = pre[t] || []).push(f); });
+  Object.keys(next).forEach((k) => next[k].sort((a, b) => a - b));
+  // Baby forms from a later generation (e.g. Pichu -> Pikachu) don't count as a "previous stage",
+  // so Pikachu still behaves like a basic Kanto Pokémon.
+  const effPre = (id) => (pre[id] || []).filter((p) => genOf(p) <= genOf(id));
 
   function options(id) {
-    return (next[id] || []).map((to) => ({
+    return (next[id] || []).map((to, i) => ({
       to,
-      type: id === 133 ? EEVEE[to] : TYPES[id % 4],
-      cost: id === 133 ? 25 : hasPre.has(id) ? 30 : next[to] ? 15 : 20
+      type: id === 133 ? EEVEE[to] : TYPES[(id + i) % 4],
+      cost: id === 133 ? 25 : effPre(id).length ? 30 : next[to] ? 15 : 20
     }));
   }
-  return { options, pre: (id) => PAIRS.filter((p) => p[1] === id).map((p) => p[0]) };
+  // basic / middle / final / single (no evolution) / legend
+  function tier(id) {
+    if (window.LEGENDARY.includes(id)) return "legend";
+    const hasPre = effPre(id).length > 0, hasNext = !!next[id];
+    return hasPre ? (hasNext ? "middle" : "final") : (hasNext ? "basic" : "single");
+  }
+  // Wild spawn weights: basic forms are common, evolved forms are rare, legends never spawn.
+  const WEIGHT = { legend: 0, basic: 10, middle: 3, final: 1, single: 1 };
+  return { options, tier, genOf, weight: (id) => WEIGHT[tier(id)] };
 })();

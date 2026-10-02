@@ -21,8 +21,8 @@
     { id: "r", label: "Romaji reading", cls: "r" }
   ];
   const REGIONS = [
-    { name: "Kanto", lv: "N5", cls: "kanto", open: true },
-    { name: "Johto", lv: "N4", cls: "johto" },
+    { name: "Kanto", lv: "N5", cls: "kanto", open: true, range: window.GEN_RANGES[0] },
+    { name: "Johto", lv: "N4", cls: "johto", range: window.GEN_RANGES[1] },
     { name: "Hoenn", lv: "N3", cls: "hoenn" },
     { name: "Sinnoh", lv: "N2", cls: "sinnoh" },
     { name: "Unova", lv: "N1", cls: "unova" }
@@ -31,6 +31,19 @@
   const SKILL_STEP = 25; // correct answers per skill level
   const hue = (id) => (id * 47) % 360;
   const pad = (id) => String(id).padStart(3, "0");
+  const TOTAL = POKEMON.length;
+  const regionOf = (id) => REGIONS.find((r) => r.range && id >= r.range[0] && id <= r.range[1]);
+  const isLegend = (id) => LEGENDARY.includes(id);
+
+  // Weighted wild spawn: basic forms are common, evolved/non-evolving forms are rare, legends never appear.
+  function pickWild(region) {
+    const pool = [];
+    let total = 0;
+    for (let id = region.range[0]; id <= region.range[1]; id++) { const w = Evo.weight(id); if (w) { pool.push([id, w]); total += w; } }
+    let r = Math.random() * total;
+    for (const [id, w] of pool) { r -= w; if (r <= 0) return id; }
+    return pool[0][0];
+  }
 
   let screenToken = 0, keyHandler = null, lastRoute = "mixed";
   const setKeys = (fn) => { if (keyHandler) document.removeEventListener("keydown", keyHandler); keyHandler = fn; if (fn) document.addEventListener("keydown", fn); };
@@ -265,8 +278,8 @@
       <div class="panel region ${r.cls} ${r.open ? "" : "locked"}">
         <h3><span>${r.open ? "" : "🔒 "}${r.name}</span> <span class="tag">${r.lv}</span></h3>
         ${r.open ? `<div class="muted">Pick a route. Every correct answer weakens the wild Pokémon and earns candy.</div>
-          <div class="row routes">${ROUTES.map((x) => `<button class="btn ${x.cls}" data-go="encounter" data-arg="${x.id}">${x.label}</button>`).join("")}</div>`
-        : `<div class="muted">Locked — coming in a later update.</div>`}
+          <div class="row routes">${ROUTES.map((x) => `<button class="btn ${x.cls}" data-go="encounter" data-arg="${x.id}@${r.cls}">${x.label}</button>`).join("")}</div>`
+        : `<div class="muted">Locked — opens once its study content is ready (coming in a later update).${r.range ? ` Pokémon here: #${r.range[0]}–#${r.range[1]}.` : ""}</div>`}
       </div>`).join("");
 
     render(`
@@ -278,7 +291,8 @@
         </div>
         <div class="row">
           <button class="btn small" data-go="placement">${st.placement ? "Retake placement test" : "Placement test"}</button>
-          <button class="btn small" data-go="dex">Pokédex ${Object.keys(st.dex).length}/151</button>
+          <button class="btn small" data-go="dex">Pokédex ${Object.keys(st.dex).length}/${TOTAL}</button>
+          <button class="btn small" data-go="legends">⭐ Legend quests</button>
           <button class="btn small" data-go="settings">Settings</button>
         </div>
         ${st.placement ? `<div class="muted small">Last placement: ${st.placement.score}/${st.placement.total}. ${placementAdvice(st.placement)}</div>` : ""}
@@ -292,13 +306,15 @@
       <div class="grid regions">${regions}</div>`);
   }
 
-  function encounter(route) {
-    lastRoute = route;
+  function encounter(arg) {
+    lastRoute = arg;
+    const [route, regionId] = arg.split("@");
+    const region = REGIONS.find((r) => r.cls === regionId) || REGIONS[0];
     const st = S();
     let note = "";
     if (st.balls < 1) { st.balls = 1; Store.save(); note = "The Professor handed you a spare Poké Ball."; }
     const items = pickForRoute(route, 5).map(prepare);
-    const id = 1 + rnd(151), shiny = Math.random() < 1 / 50, name = POKEMON[id - 1];
+    const id = pickWild(region), shiny = Math.random() < 1 / 50, name = POKEMON[id - 1];
     const ctx = { xp: 0, candy: {}, levelUps: 0 };
     render(`
       <section class="panel arena" style="--h:${hue(id)}">
@@ -424,14 +440,94 @@
     }, 2000);
   }
 
-  function team() {
-    const ids = ownedIds().sort((a, b) => (canEvolve(b) - canEvolve(a)) || a - b);
-    render(`<section class="panel row spread"><h2 style="margin:0">My Pokémon (${ids.length})</h2>
-        <button class="btn small" data-go="home">Back</button></section>
-      <section class="panel">${ids.length ? `<div class="monstrip big">${ids.map(monCell).join("")}</div>
-      <div class="muted small" style="margin-top:8px">⬆ = enough candy to evolve. Tap a Pokémon to see details.</div>` : '<div class="empty">Nothing here yet — go catch something!</div>'}</section>`);
-  }
+  // ---------- filterable Pokémon lists (Pokédex and My Pokémon) ----------
+  const F = {
+    dex: { place: "all", status: "all", q: "", sort: "num" },
+    team: { place: "all", status: "all", q: "", sort: "num" }
+  };
+  const STATUS = {
+    dex: [
+      ["all", "All", () => true],
+      ["caught", "Caught", (id) => !!S().dex[id]],
+      ["missing", "Not caught yet", (id) => !S().dex[id]],
+      ["shiny", "✨ Shiny", (id) => !!(S().dex[id] && S().dex[id].shiny)],
+      ["legend", "⭐ Legendary", isLegend]
+    ],
+    team: [
+      ["all", "All", () => true],
+      ["ready", "⬆ Ready to evolve", canEvolve],
+      ["evolves", "Can evolve", (id) => Evo.options(id).length > 0],
+      ["final", "Final form", (id) => Evo.options(id).length === 0],
+      ["shiny", "✨ Shiny", (id) => S().caught[id].shiny],
+      ["dupes", "Duplicates", (id) => S().caught[id].n > 1],
+      ["legend", "⭐ Legendary", isLegend]
+    ]
+  };
 
+  function listScreen(kind) {
+    const isDex = kind === "dex", f = F[kind];
+    const base = () => (isDex ? POKEMON.map((_, i) => i + 1) : ownedIds());
+    const places = [["all", "All places"]].concat(REGIONS.filter((r) => r.range).map((r) => [r.cls, r.name]));
+    render(`<section class="panel row spread"><h2 class="pixel" style="margin:0" id="ftitle"></h2>
+        <button class="btn small" data-go="home">Back</button></section>
+      <section class="panel filters"><div id="fchips"></div>
+        <div class="row" style="margin-top:8px"><input id="fq" type="search" placeholder="Search name or number…" value="${esc(f.q)}" autocomplete="off">
+        <label class="muted small">Sort
+          <select id="fsort"><option value="num">Dex number</option>${isDex ? "" : '<option value="new">Newest first</option><option value="name">Name</option>'}</select></label></div>
+        <div class="muted small" id="fcount" style="margin-top:6px"></div></section>
+      <div id="fgrid"></div>`);
+    document.getElementById("fsort").value = f.sort;
+
+    const chips = (key, list) => `<div class="chips">${list.map(([v, label, cnt]) =>
+      `<button class="fchip ${f[key] === v ? "on" : ""}" data-k="${key}" data-v="${v}">${label}${cnt != null ? ` <span>${cnt}</span>` : ""}</button>`).join("")}</div>`;
+
+    const cell = (id) => {
+      const st = S(), d = st.dex[id], owned = st.caught[id] && st.caught[id].n > 0, rg = regionOf(id);
+      return `<div class="dexcell ${d && d.shiny ? "shiny" : ""} ${isLegend(id) ? "legend" : ""}" style="--h:${hue(id)}">
+        ${sprite(id, d && d.shiny, d ? "" : "unknown")}
+        <div class="muted small">#${pad(id)} · ${rg ? rg.name : ""}</div>
+        <div>${d ? POKEMON[id - 1] + (d.shiny ? " ✨" : "") + (isLegend(id) ? " ⭐" : "") : "???"}</div>
+        ${owned ? `<button class="btn small" data-go="mon" data-arg="${id}">View</button>` : ""}</div>`;
+    };
+
+    function draw() {
+      const st = S(), all = base();
+      document.getElementById("ftitle").textContent = isDex ? `Pokédex ${Object.keys(st.dex).length}/${TOTAL}` : `My Pokémon (${ownedIds().length})`;
+      const registered = Object.keys(st.dex).map(Number);
+      const placeList = places.map(([v, label]) => {
+        if (v === "all") return [v, label, isDex ? `${registered.length}/${TOTAL}` : ownedIds().length];
+        const r = REGIONS.find((x) => x.cls === v), size = r.range[1] - r.range[0] + 1;
+        const have = (isDex ? registered : ownedIds()).filter((id) => id >= r.range[0] && id <= r.range[1]).length;
+        return [v, label, isDex ? `${have}/${size}` : have];
+      });
+      document.getElementById("fchips").innerHTML =
+        `<div class="muted small">Place</div>${chips("place", placeList)}<div class="muted small" style="margin-top:6px">Show</div>${chips("status", STATUS[kind].map(([v, l]) => [v, l]))}`;
+
+      const pred = STATUS[kind].find((x) => x[0] === f.status)[2], q = f.q.trim().toLowerCase().replace(/^#/, "");
+      let ids = all
+        .filter((id) => f.place === "all" || (regionOf(id) && regionOf(id).cls === f.place))
+        .filter(pred)
+        .filter((id) => !q || String(id) === q || pad(id) === q || ((!isDex || st.dex[id]) && POKEMON[id - 1].toLowerCase().includes(q)));
+      if (f.sort === "new") ids.sort((a, b) => (st.caught[b].at || 0) - (st.caught[a].at || 0));
+      else if (f.sort === "name") ids.sort((a, b) => POKEMON[a - 1].localeCompare(POKEMON[b - 1]));
+      else ids.sort((a, b) => a - b);
+
+      document.getElementById("fcount").textContent = `Showing ${ids.length} of ${all.length}`;
+      document.getElementById("fgrid").innerHTML = !ids.length
+        ? `<div class="panel empty">${!isDex && !ownedIds().length ? "Nothing here yet — go catch something!" : "No Pokémon match these filters."}</div>`
+        : isDex ? `<div class="grid pokedex">${ids.map(cell).join("")}</div>`
+        : `<section class="panel"><div class="monstrip big">${ids.map(monCell).join("")}</div>
+           <div class="muted small" style="margin-top:8px">⬆ = enough candy to evolve. Tap a Pokémon to see details.</div></section>`;
+    }
+    document.getElementById("fchips").addEventListener("click", (e) => {
+      const b = e.target.closest(".fchip");
+      if (b) { f[b.dataset.k] = b.dataset.v; draw(); }
+    });
+    document.getElementById("fq").addEventListener("input", (e) => { f.q = e.target.value; draw(); });
+    document.getElementById("fsort").addEventListener("change", (e) => { f.sort = e.target.value; draw(); });
+    draw();
+  }
+  const team = () => listScreen("team");
   function placement() {
     const pool = window.QUESTIONS, items = [];
     [1, 2, 3].forEach((d) => items.push(...shuffle(pool.filter((q) => q.d === d)).slice(0, 5)));
@@ -455,18 +551,56 @@
     return "Start from the Mixed route and use the vocabulary and grammar routes to build up.";
   }
 
-  function dex() {
-    const st = S();
-    const cells = POKEMON.map((name, i) => {
-      const id = i + 1, d = st.dex[id], owned = st.caught[id] && st.caught[id].n > 0;
-      return `<div class="dexcell ${d && d.shiny ? "shiny" : ""}" style="--h:${hue(id)}">${sprite(id, d && d.shiny, d ? "" : "unknown")}
-        <div class="muted small">#${pad(id)}</div><div>${d ? name + (d.shiny ? " ✨" : "") : "???"}</div>
-        ${owned ? `<button class="btn small" data-go="mon" data-arg="${id}">View</button>` : ""}</div>`;
-    }).join("");
-    render(`<section class="panel row spread"><h2 class="pixel" style="margin:0">Pokédex ${Object.keys(st.dex).length}/151</h2>
-      <button class="btn small" data-go="home">Back</button></section><div class="grid pokedex">${cells}</div>`);
+  const dex = () => listScreen("dex");
+
+  // ---------- Legend quests: legendaries are earned, they never appear in the wild ----------
+  const need = (lv) => (lv - 1) * SKILL_STEP; // correct answers needed to reach a skill level
+  const LEGEND_QUESTS = [
+    { id: 144, text: "Reach Grammar Lv 3", prog: (st) => [st.skill.g.c, need(3)] },
+    { id: 145, text: "Reach Vocabulary Lv 3", prog: (st) => [st.skill.v.c, need(3)] },
+    { id: 146, text: "Reach Kanji Lv 3", prog: (st) => [st.skill.k.c, need(3)] },
+    { id: 150, text: "Claim Articuno, Zapdos and Moltres, and reach Romaji Lv 3",
+      prog: (st) => [[144, 145, 146].filter((i) => st.legends[i]).length + (st.skill.r.c >= need(3) ? 1 : 0), 4], plain: true },
+    { id: 151, text: "Reach a 7-day streak", prog: (st) => [Math.max(st.bestStreak || 0, st.streak), 7], plain: true }
+  ];
+  const JOHTO_LEGENDS = [243, 244, 245, 249, 250, 251];
+
+  function claimLegend(id) {
+    const st = S(), q = LEGEND_QUESTS.find((x) => x.id === id);
+    if (!q || st.legends[id]) return;
+    const [a, b] = q.prog(st);
+    if (a < b) return;
+    st.legends[id] = true;
+    const c = st.caught[id] || { n: 0, shiny: false, at: 0 };
+    c.n++; c.at = Date.now(); st.caught[id] = c;
+    st.dex[id] = { shiny: !!(st.dex[id] && st.dex[id].shiny) };
+    Store.save();
+    confetti();
+    legends();
   }
 
+  function legends() {
+    const st = S();
+    const cards = LEGEND_QUESTS.map((q) => {
+      const [a, b] = q.prog(st), got = !!st.legends[q.id], done = a >= b;
+      return `<div class="legendcard ${got ? "got" : done ? "ready" : ""}" style="--h:${hue(q.id)}">
+        ${sprite(q.id, false, got ? "float" : "unknown")}
+        <h3>${POKEMON[q.id - 1]} ${got ? "✅" : ""}</h3>
+        <div class="muted small">${q.text}</div>
+        ${got ? `<button class="btn small" data-go="mon" data-arg="${q.id}">View</button>`
+          : `<div class="bar"><i style="width:${Math.min(100, (a / b) * 100)}%;background:var(--gold)"></i></div>
+             <div class="muted small">${Math.min(a, b)} / ${b}</div>
+             <button class="btn gold small" data-claim="${q.id}" ${done ? "" : "disabled"}>${done ? "Claim!" : "Keep going"}</button>`}
+      </div>`;
+    }).join("");
+    const locked = JOHTO_LEGENDS.map((id) => `<div class="legendcard locked">${sprite(id, false, "unknown")}
+        <h3>???</h3><div class="muted small">🔒 Opens with Johto (N4)</div></div>`).join("");
+    render(`<section class="panel row spread"><div><h2 class="pixel" style="margin:0">⭐ Legend quests</h2>
+        <div class="muted small">Legendary Pokémon never appear in the wild. Earn them by studying.</div></div>
+        <button class="btn small" data-go="home">Back</button></section>
+      <div class="legends">${cards}${locked}</div>`);
+    $app.querySelectorAll("[data-claim]").forEach((b) => b.addEventListener("click", () => claimLegend(+b.dataset.claim)));
+  }
   function settings() {
     const st = S();
     render(`<section class="panel"><h2 class="pixel">Settings</h2>
@@ -492,7 +626,7 @@
     screenToken++;
     setKeys(null);
     if (screen === "encounter") encounter(arg || "mixed");
-    else ({ home, placement, dex, settings, team, mon: () => mon(arg) }[screen] || home)();
+    else ({ home, placement, dex, settings, team, legends, mon: () => mon(arg) }[screen] || home)();
     window.scrollTo(0, 0);
   }
 
