@@ -20,15 +20,23 @@
     { id: "k", label: "Kanji only", cls: "k" },
     { id: "r", label: "Romaji reading", cls: "r" }
   ];
+  // Each JLPT level is a region. `levels` = skill levels you must reach (in all four skills) before the Gym Leader exam.
   const REGIONS = [
-    { name: "Kanto", lv: "N5", cls: "kanto", open: true, range: window.GEN_RANGES[0] },
-    { name: "Johto", lv: "N4", cls: "johto", range: window.GEN_RANGES[1] },
-    { name: "Hoenn", lv: "N3", cls: "hoenn" },
-    { name: "Sinnoh", lv: "N2", cls: "sinnoh" },
-    { name: "Unova", lv: "N1", cls: "unova" }
+    { name: "Kanto", lv: "N5", n: 5, cls: "kanto", levels: 5, guardian: 95, range: window.GEN_RANGES[0] },
+    { name: "Johto", lv: "N4", n: 4, cls: "johto", levels: 10, guardian: 208, range: window.GEN_RANGES[1] },
+    { name: "Hoenn", lv: "N3", n: 3, cls: "hoenn", levels: 15 },
+    { name: "Sinnoh", lv: "N2", n: 2, cls: "sinnoh", levels: 20 },
+    { name: "Unova", lv: "N1", n: 1, cls: "unova", levels: 25 }
   ];
+  const LEVEL_STEP = 25;   // correct answers per skill level
+  const PASS_RATE = 0.8;   // Gym Leader exam: 16 of 20 correct
+  const EXAM_PER_SKILL = 5;
+  const lvNeed = (lv) => (lv - 1) * LEVEL_STEP;      // correct answers needed to reach a skill level
+  const regionLevel = (r, t) => Math.min(r.levels, Math.floor(S().prog[r.cls][t] / LEVEL_STEP) + 1);
+  const isUnlocked = (r) => !!S().unlocked[r.cls];
+  const earlyPass = (r) => r === REGIONS[0] && !!S().placement && S().placement.score >= 13; // strong placement result
+  const bossReady = (r) => isUnlocked(r) && (earlyPass(r) || ["g", "v", "k", "r"].every((t) => S().prog[r.cls][t] >= lvNeed(r.levels)));
   const levelOf = (xp) => Math.floor(xp / 100) + 1;
-  const SKILL_STEP = 25; // correct answers per skill level
   const hue = (id) => (id * 47) % 360;
   const pad = (id) => String(id).padStart(3, "0");
   const TOTAL = POKEMON.length;
@@ -49,23 +57,26 @@
   const setKeys = (fn) => { if (keyHandler) document.removeEventListener("keydown", keyHandler); keyHandler = fn; if (fn) document.addEventListener("keydown", fn); };
 
   // ---------- question pools ----------
-  function poolOf(t) {
-    if (t === "k") return window.buildKanjiQuestions();
-    if (t === "r") return window.ROMAJI_SENTENCES.map((s) => ({ id: s.id, t: "r", d: s.d, s: s.s, k: s.k, en: s.en }));
-    return window.QUESTIONS.filter((q) => q.t === t);
+  function poolOf(t, region) {
+    const lv = region.n;
+    if (t === "k") return window.buildKanjiQuestions().filter((q) => q.lv === lv);
+    if (t === "r") return window.ROMAJI_SENTENCES.filter((s) => (s.lv || 5) === lv).map((s) => ({ id: s.id, t: "r", lv, d: s.d, s: s.s, k: s.k, en: s.en }));
+    return window.QUESTIONS.filter((q) => q.t === t && q.lv === lv);
   }
+  const contentCount = (region) => ["g", "v", "k", "r"].reduce((n, t) => n + poolOf(t, region).length, 0);
   // Questions answered wrong before are weighted heavier so they come back for review.
   function pickQuestions(pool, n) {
     const st = S();
     return pool.map((q) => ({ q, k: Math.random() * Math.max(0.2, 1 + (st.wrong[q.id] || 0) * 3 - Math.min(st.right[q.id] || 0, 3) * 0.2) }))
       .sort((x, y) => y.k - x.k).slice(0, n).map((x) => x.q);
   }
-  function pickForRoute(route, n) {
-    if (route !== "mixed") return pickQuestions(poolOf(route), n);
-    const order = shuffle(["g", "v", "k", "r"]), counts = {};
-    for (let i = 0; i < n; i++) counts[order[i % 4]] = (counts[order[i % 4]] || 0) + 1;
+  function pickForRoute(route, n, region) {
+    if (route !== "mixed") return pickQuestions(poolOf(route, region), n);
+    const order = shuffle(["g", "v", "k", "r"].filter((t) => poolOf(t, region).length)), counts = {};
+    if (!order.length) return [];
+    for (let i = 0; i < n; i++) counts[order[i % order.length]] = (counts[order[i % order.length]] || 0) + 1;
     let out = [];
-    Object.keys(counts).forEach((t) => { out = out.concat(pickQuestions(poolOf(t), counts[t])); });
+    Object.keys(counts).forEach((t) => { out = out.concat(pickQuestions(poolOf(t, region), counts[t])); });
     return shuffle(out);
   }
   function prepare(q) {
@@ -134,11 +145,18 @@
     st.skill[t].t++;
     if (!ok) return "";
     st.skill[t].c++;
+    let lvUp = "";
+    if (ctx.region) {
+      const reg = REGIONS.find((x) => x.cls === ctx.region), before = regionLevel(reg, t);
+      st.prog[ctx.region][t]++;
+      const after = regionLevel(reg, t);
+      if (after > before) { ctx.lvUps = ctx.lvUps || []; ctx.lvUps.push(`📈 ${SKILLS[t].name} reached Lv ${after}/${reg.levels} in ${reg.name}`); }
+    }
     const candy = 1 + (combo >= 3 ? 1 : 0);
     st.candy[t] += candy;
     ctx.candy[t] = (ctx.candy[t] || 0) + candy;
     addXp(10, ctx);
-    return chip(t, `+${candy} ${SKILLS[t].candy}`) + chip("xp", "+10 XP") + (combo >= 3 ? chip("combo", `🔥 combo ×${combo}`) : "");
+    return chip(t, `+${candy} ${SKILLS[t].candy}`) + chip("xp", "+10 XP") + lvUp + (combo >= 3 ? chip("combo", `🔥 combo ×${combo}`) : "");
   }
 
   // ---------- quiz runner (used by encounters and the placement test) ----------
@@ -253,6 +271,97 @@
   }
   const ownedIds = () => Object.keys(S().caught).map(Number).filter((id) => S().caught[id].n > 0);
 
+  function regionCard(r) {
+    const st = S(), prev = REGIONS[REGIONS.indexOf(r) - 1];
+    if (!isUnlocked(r)) {
+      return `<div class="panel region ${r.cls} locked">
+        <h3><span>🔒 ${r.name}</span> <span class="tag">${r.lv}</span></h3>
+        <div class="muted">Beat the ${prev.name} Gym Leader to travel here.</div>
+        <div class="muted small">${r.lv} needs Lv ${r.levels} in all four skills before its Gym Leader.${r.range ? ` Pokémon here: #${r.range[0]}–#${r.range[1]}.` : ""}</div>
+      </div>`;
+    }
+    const noContent = contentCount(r) === 0;
+    const routes = ROUTES.map((x) => {
+      const empty = x.id === "mixed" ? noContent : poolOf(x.id, r).length === 0;
+      return `<button class="btn ${x.cls}" data-go="encounter" data-arg="${x.id}@${r.cls}" ${empty ? "disabled" : ""}>${x.label}</button>`;
+    }).join("");
+    const cap = lvNeed(r.levels);
+    const progress = ["g", "v", "k", "r"].map((t) => {
+      const c = st.prog[r.cls][t], lvl = regionLevel(r, t), max = c >= cap, into = c % LEVEL_STEP;
+      return `<div class="skill"><div class="skillname"><b class="c-${t}">${SKILLS[t].name}</b> <span>${max ? "MAX " : ""}Lv ${lvl}/${r.levels}</span></div>
+        <div class="bar ${t}"><i style="width:${max ? 100 : (into / LEVEL_STEP) * 100}%"></i></div></div>`;
+    }).join("");
+    const total = ["g", "v", "k", "r"].reduce((n, t) => n + poolOf(t, r).length, 0);
+    const ready = bossReady(r), badge = st.badges[r.cls];
+    return `<div class="panel region ${r.cls}">
+      <h3><span>${r.name}</span> <span class="tag">${r.lv}</span>${badge ? ' <span class="tag gold">🏅 Badge</span>' : ""}</h3>
+      ${noContent ? `<div class="muted">The ${r.lv} study content is still being written — check back after the next update.</div>`
+        : `<div class="muted">Pick a route. Every correct answer weakens the wild Pokémon, earns candy and raises your ${r.lv} skill levels. <span class="small">(${total} questions in this region)</span></div>`}
+      <div class="row routes">${routes}</div>
+      ${noContent ? "" : `<div class="progress">${progress}</div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn gold" data-go="boss" data-arg="${r.cls}" ${ready ? "" : "disabled"}>🏆 ${badge ? "Rematch" : "Gym Leader exam"}</button>
+        <span class="muted small">${ready ? (earlyPass(r) && !["g", "v", "k", "r"].every((t) => st.prog[r.cls][t] >= cap) ? "Your placement score lets you challenge early! " : "") + `${EXAM_PER_SKILL * 4} questions, pass with ${Math.ceil(EXAM_PER_SKILL * 4 * PASS_RATE)}.` : `Reach Lv ${r.levels} in all four skills to unlock the exam.`}</span>
+      </div>`}
+    </div>`;
+  }
+
+  // Gym Leader exam: 5 questions per skill, pass with 80%. Passing earns a badge and opens the next region.
+  function boss(regionCls) {
+    const r = REGIONS.find((x) => x.cls === regionCls);
+    if (!r || !bossReady(r)) return home();
+    let items = [];
+    ["g", "v", "k", "r"].forEach((t) => { items = items.concat(pickQuestions(poolOf(t, r), EXAM_PER_SKILL)); });
+    items = shuffle(items).map(prepare);
+    if (!items.length) return home();
+    const needed = Math.ceil(items.length * PASS_RATE), ctx = { xp: 0, candy: {}, levelUps: 0, region: r.cls };
+    render(`<section class="panel arena boss" style="--h:${hue(r.guardian)}">
+        <div class="pixel">🏆 ${r.name} Gym Leader exam — ${r.guardian ? `<b>${POKEMON[r.guardian - 1]}</b> guards the gym!` : ""}</div>
+        ${sprite(r.guardian, false, "big float")}
+        <div class="hpbar"><div id="hp" style="width:100%"></div></div>
+        <div class="muted small">Answer ${needed} of ${items.length} correctly to win. No Poké Balls needed.</div>
+      </section><div id="quiz"></div>`);
+    runQuiz(items, {
+      reward: (q, ok, combo) => applyReward(q, ok, combo, ctx),
+      onUpdate: (correct, total, ok) => {
+        const hp = document.getElementById("hp"), pct = 100 - (correct / needed) * 100;
+        hp.style.width = Math.max(0, pct) + "%";
+        hp.style.background = pct > 50 ? "#34d399" : pct > 25 ? "#fbbf24" : "#ef4444";
+        const sp = document.querySelector(".arena .sprite");
+        sp.classList.remove("hit", "taunt"); void sp.offsetWidth; sp.classList.add(ok ? "hit" : "taunt");
+      }
+    }, (correct) => finishBoss(r, correct, items.length, needed, ctx));
+  }
+
+  function finishBoss(r, correct, total, needed, ctx) {
+    const st = S(), pass = correct >= needed, first = pass && !st.badges[r.cls], extras = [];
+    if (pass) {
+      if (first) {
+        st.badges[r.cls] = true;
+        st.balls += 10; addXp(100, ctx);
+        extras.push(`🏅 ${r.name} badge earned! +10 Poké Balls, +100 XP`);
+        const g = st.caught[r.guardian] || { n: 0, shiny: false, at: 0 };
+        g.n++; g.at = Date.now(); st.caught[r.guardian] = g;
+        st.dex[r.guardian] = { shiny: !!(st.dex[r.guardian] && st.dex[r.guardian].shiny) };
+        extras.push(`${POKEMON[r.guardian - 1]} joined your team!`);
+        const next = REGIONS[REGIONS.indexOf(r) + 1];
+        if (next) { st.unlocked[next.cls] = true; extras.push(`🗺️ ${next.name} (${next.lv}) is now open!`); }
+      } else { addXp(30, ctx); extras.push("+30 XP for the rematch"); }
+    }
+    (ctx.lvUps || []).forEach((m) => extras.push(m));
+    Store.save();
+    render(`<section class="panel arena result ${pass ? "win" : ""}" style="--h:${hue(r.guardian)}">
+      <h2 class="pixel">${pass ? `You beat the ${r.name} Gym Leader!` : "Not this time…"}</h2>
+      ${sprite(r.guardian, false, "big" + (pass ? " float" : " dim"))}
+      <p>Score <b>${correct}/${total}</b> (need ${needed}) · <b>+${ctx.xp} XP</b></p>
+      ${extras.length ? `<ul class="extras">${extras.map((x) => `<li>${x}</li>`).join("")}</ul>` : ""}
+      ${pass ? "" : '<p class="muted">Wrong answers will come back more often in your next encounters. You can retry right away.</p>'}
+      <div class="row center" style="margin-top:12px">
+        ${pass ? "" : `<button class="btn gold" data-go="boss" data-arg="${r.cls}">Retry exam</button>`}
+        <button class="btn" data-go="home">Home</button></div></section>`);
+    if (pass) confetti();
+  }
+
   function home() {
     const st = S();
     const owned = ownedIds().sort((a, b) => (st.caught[b].at || 0) - (st.caught[a].at || 0));
@@ -267,20 +376,7 @@
       : `<div class="empty">No Pokémon yet. Start an encounter below and catch your first one! ${ballIcon}</div>`;
 
     const candyBag = ["g", "v", "k", "r"].map((t) => candyChip(t, st.candy[t])).join("");
-    const skills = ["g", "v", "k", "r"].map((t) => {
-      const c = st.skill[t].c, lvl = Math.floor(c / SKILL_STEP) + 1, into = c % SKILL_STEP;
-      return `<div class="skill"><div class="skillname"><b class="c-${t}">${SKILLS[t].name}</b> <span>Lv ${lvl}</span></div>
-        <div class="bar ${t}"><i style="width:${(into / SKILL_STEP) * 100}%"></i></div>
-        <div class="muted small">${c} correct · ${into}/${SKILL_STEP} to next level</div></div>`;
-    }).join("");
-
-    const regions = REGIONS.map((r) => `
-      <div class="panel region ${r.cls} ${r.open ? "" : "locked"}">
-        <h3><span>${r.open ? "" : "🔒 "}${r.name}</span> <span class="tag">${r.lv}</span></h3>
-        ${r.open ? `<div class="muted">Pick a route. Every correct answer weakens the wild Pokémon and earns candy.</div>
-          <div class="row routes">${ROUTES.map((x) => `<button class="btn ${x.cls}" data-go="encounter" data-arg="${x.id}@${r.cls}">${x.label}</button>`).join("")}</div>`
-        : `<div class="muted">Locked — opens once its study content is ready (coming in a later update).${r.range ? ` Pokémon here: #${r.range[0]}–#${r.range[1]}.` : ""}</div>`}
-      </div>`).join("");
+    const regions = REGIONS.map(regionCard).join("");
 
     render(`
       <section class="panel hero">
@@ -298,11 +394,8 @@
         ${st.placement ? `<div class="muted small">Last placement: ${st.placement.score}/${st.placement.total}. ${placementAdvice(st.placement)}</div>` : ""}
       </section>
       <section class="panel"><h2>Your Pokémon</h2>${collection}</section>
-      <div class="two">
-        <section class="panel"><h2>Candy bag</h2><div class="muted small">Earn candy by answering correctly. Spend it to evolve Pokémon.</div>
-          <div class="row candy-row">${candyBag}</div></section>
-        <section class="panel"><h2>Skills</h2>${skills}</section>
-      </div>
+      <section class="panel"><h2>Candy bag</h2><div class="muted small">Earn candy by answering correctly. Spend it to evolve Pokémon.</div>
+        <div class="row candy-row">${candyBag}</div></section>
       <div class="grid regions">${regions}</div>`);
   }
 
@@ -311,11 +404,13 @@
     const [route, regionId] = arg.split("@");
     const region = REGIONS.find((r) => r.cls === regionId) || REGIONS[0];
     const st = S();
+    if (!isUnlocked(region)) return home();
     let note = "";
     if (st.balls < 1) { st.balls = 1; Store.save(); note = "The Professor handed you a spare Poké Ball."; }
-    const items = pickForRoute(route, 5).map(prepare);
+    const items = pickForRoute(route, 5, region).map(prepare);
+    if (!items.length) return home();
     const id = pickWild(region), shiny = Math.random() < 1 / 50, name = POKEMON[id - 1];
-    const ctx = { xp: 0, candy: {}, levelUps: 0 };
+    const ctx = { xp: 0, candy: {}, levelUps: 0, region: region.cls, wasReady: bossReady(region) };
     render(`
       <section class="panel arena" style="--h:${hue(id)}">
         <div class="pixel">A wild ${shiny ? "✨ shiny " : ""}<b>${name}</b> appeared! <span class="muted">Lv ${5 + rnd(30)}</span></div>
@@ -345,6 +440,9 @@
       st.balls += bonus;
       extras.push(`📅 Daily bonus: +${bonus} Poké Balls (streak ${st.streak})`);
     }
+    (ctx.lvUps || []).forEach((m) => extras.push(m));
+    const reg = REGIONS.find((x) => x.cls === ctx.region);
+    if (reg && bossReady(reg) && !st.badges[reg.cls] && !ctx.wasReady) extras.push(`🏆 The ${reg.name} Gym Leader exam is ready!`);
     if (ctx.levelUps) extras.push(`⭐ Trainer level up! Now Lv ${levelOf(st.xp)} (+${3 * ctx.levelUps} Poké Balls)`);
 
     const chance = perfect || e.correct >= 4 ? 1 : e.correct === 3 ? 0.6 : 0;
@@ -554,13 +652,13 @@
   const dex = () => listScreen("dex");
 
   // ---------- Legend quests: legendaries are earned, they never appear in the wild ----------
-  const need = (lv) => (lv - 1) * SKILL_STEP; // correct answers needed to reach a skill level
+  const kp = (st, t) => st.prog.kanto[t];
   const LEGEND_QUESTS = [
-    { id: 144, text: "Reach Grammar Lv 3", prog: (st) => [st.skill.g.c, need(3)] },
-    { id: 145, text: "Reach Vocabulary Lv 3", prog: (st) => [st.skill.v.c, need(3)] },
-    { id: 146, text: "Reach Kanji Lv 3", prog: (st) => [st.skill.k.c, need(3)] },
-    { id: 150, text: "Claim Articuno, Zapdos and Moltres, and reach Romaji Lv 3",
-      prog: (st) => [[144, 145, 146].filter((i) => st.legends[i]).length + (st.skill.r.c >= need(3) ? 1 : 0), 4], plain: true },
+    { id: 144, text: "Reach Grammar Lv 3 in Kanto (N5)", prog: (st) => [kp(st, "g"), lvNeed(3)] },
+    { id: 145, text: "Reach Vocabulary Lv 3 in Kanto (N5)", prog: (st) => [kp(st, "v"), lvNeed(3)] },
+    { id: 146, text: "Reach Kanji Lv 3 in Kanto (N5)", prog: (st) => [kp(st, "k"), lvNeed(3)] },
+    { id: 150, text: "Claim Articuno, Zapdos and Moltres, and reach Romaji Lv 3 in Kanto",
+      prog: (st) => [[144, 145, 146].filter((i) => st.legends[i]).length + (kp(st, "r") >= lvNeed(3) ? 1 : 0), 4], plain: true },
     { id: 151, text: "Reach a 7-day streak", prog: (st) => [Math.max(st.bestStreak || 0, st.streak), 7], plain: true }
   ];
   const JOHTO_LEGENDS = [243, 244, 245, 249, 250, 251];
@@ -626,7 +724,7 @@
     screenToken++;
     setKeys(null);
     if (screen === "encounter") encounter(arg || "mixed");
-    else ({ home, placement, dex, settings, team, legends, mon: () => mon(arg) }[screen] || home)();
+    else ({ home, placement, dex, settings, team, legends, mon: () => mon(arg), boss: () => boss(arg) }[screen] || home)();
     window.scrollTo(0, 0);
   }
 

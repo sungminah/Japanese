@@ -1,4 +1,4 @@
-// N5-level kanji: [kanji, meaning, on-yomi, kun-yomi, [[word, reading, meaning], ...]]
+// Kanji: [kanji, meaning, on-yomi, kun-yomi, [[word, reading, meaning], ...], level (optional, default 5)]
 window.KANJI = [
   ["一", "one", "いち", "ひと(つ)", [["一人", "ひとり", "one person"], ["一月", "いちがつ", "January"]]],
   ["二", "two", "に", "ふた(つ)", [["二人", "ふたり", "two people"], ["二月", "にがつ", "February"]]],
@@ -95,7 +95,7 @@ window.KANJI = [
 // Kinds: meaning (kanji -> English), reading (word -> hiragana),
 //        recognize (English + reading -> kanji word), pick (English -> kanji).
 window.buildKanjiQuestions = function () {
-  const K = window.KANJI.map(([c, m, on, kun, w]) => ({ c, m, on, kun, w: w.map(([k, r, e]) => ({ k, r, e })) }));
+  const K = window.KANJI.map(([c, m, on, kun, w, lv]) => ({ c, m, on, kun, lv: lv || 5, w: w.map(([k, r, e]) => ({ k, r, e, lv: lv || 5 })) }));
   const words = [], seen = new Set();
   K.forEach((x) => x.w.forEach((w) => { if (!seen.has(w.k)) { seen.add(w.k); words.push(w); } }));
 
@@ -110,16 +110,16 @@ window.buildKanjiQuestions = function () {
   const out = [];
   K.forEach((x) => {
     const note = `${x.c} — on: ${x.on} · kun: ${x.kun}. Words: ` + x.w.map((w) => `${w.k} (${w.r}) ${w.e}`).join("; ");
-    out.push({ id: `k:${x.c}:m`, t: "k", d: 1, p: "What does this kanji mean?", q: x.c, big: true,
+    out.push({ id: `k:${x.c}:m`, t: "k", lv: x.lv, d: 1, p: "What does this kanji mean?", q: x.c, big: true,
       c: [x.m, ...distract(K, (y) => y.m, x.m, 3)], a: 0, en: `${x.c} = ${x.m}`, note });
-    out.push({ id: `k:${x.c}:p`, t: "k", d: 2, p: "Which kanji matches this meaning?", q: `“${x.m}”`, cbig: true,
+    out.push({ id: `k:${x.c}:p`, t: "k", lv: x.lv, d: 2, p: "Which kanji matches this meaning?", q: `“${x.m}”`, cbig: true,
       c: [x.c, ...distract(K, (y) => y.c, x.c, 3)], a: 0, en: `${x.c} = ${x.m}`, note });
   });
   words.forEach((w) => {
     const note = ""; // the answer line already shows word, reading and meaning
-    out.push({ id: `k:${w.k}:r`, t: "k", d: 2, p: "How do you read this word?", q: w.k, big: true,
+    out.push({ id: `k:${w.k}:r`, t: "k", lv: w.lv, d: 2, p: "How do you read this word?", q: w.k, big: true,
       c: [w.r, ...distract(words, (y) => y.r, w.r, 3, true)], a: 0, en: `${w.k} (${w.r}) = ${w.e}`, note });
-    out.push({ id: `k:${w.k}:w`, t: "k", d: 3, p: "Which word is this?", q: `“${w.e}” — ${w.r}`, cbig: true,
+    out.push({ id: `k:${w.k}:w`, t: "k", lv: w.lv, d: 3, p: "Which word is this?", q: `“${w.e}” — ${w.r}`, cbig: true,
       c: [w.k, ...distract(words, (y) => y.k, w.k, 3, true)], a: 0, en: `${w.k} (${w.r}) = ${w.e}`, note });
   });
   return out;

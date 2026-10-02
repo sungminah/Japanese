@@ -197,3 +197,10 @@ label.toggle { cursor: pointer; user-select: none; }
 .legendcard.ready { border-color: #fbbf24; box-shadow: 0 0 16px #fbbf2488; }
 .legendcard.got { border-color: #4ade80; }
 .legendcard.locked { opacity: .5; }
+
+/* ---------- region progress & boss ---------- */
+.progress { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; margin-top: 10px; }
+.tag.gold { background: linear-gradient(135deg, #fde047, #f59e0b); color: #3b2300; }
+.arena.boss { box-shadow: 0 0 24px #f59e0b66; border-color: #fbbf24; }
+.btn:disabled.gold { filter: grayscale(.4); }
+@media (max-width: 640px) { .progress { grid-template-columns: 1fr; } }

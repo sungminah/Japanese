@@ -13,6 +13,9 @@
     dex: {},         // pokemon id -> { shiny } registered in the Pokédex (never removed)
     candy: { g: 0, v: 0, k: 0, r: 0 },                    // evolution candy per skill
     skill: { g: { c: 0, t: 0 }, v: { c: 0, t: 0 }, k: { c: 0, t: 0 }, r: { c: 0, t: 0 } }, // correct / total per skill
+    prog: {},        // region id -> { g, v, k, r } correct answers inside that region's study content
+    unlocked: { kanto: true }, // regions you can travel to
+    badges: {},      // region id -> true once its Gym Leader exam is passed
     wrong: {},       // question id -> times answered wrong (not yet cleared)
     right: {},       // question id -> times answered right
     placement: null  // { score, total, byDifficulty, ts }
@@ -24,6 +27,15 @@
     s = Object.assign(d, s || {});
     s.candy = Object.assign(defaults().candy, s.candy);
     ["g", "v", "k", "r"].forEach((t) => { s.skill[t] = Object.assign({ c: 0, t: 0 }, s.skill[t]); });
+    // Per-region progress (older saves: everything so far counted as Kanto / N5).
+    const oldSkill = (t) => (s.skill[t] && s.skill[t].c) || 0;
+    ["kanto", "johto", "hoenn", "sinnoh", "unova"].forEach((r) => {
+      const base = r === "kanto" && !(s.prog && s.prog.kanto) ? { g: oldSkill("g"), v: oldSkill("v"), k: oldSkill("k"), r: oldSkill("r") } : {};
+      s.prog = s.prog || {};
+      s.prog[r] = Object.assign({ g: 0, v: 0, k: 0, r: 0 }, base, s.prog[r]);
+    });
+    s.unlocked = Object.assign({ kanto: true }, s.unlocked);
+    s.badges = s.badges || {};
     Object.keys(s.caught).forEach((id) => { if (!s.dex[id]) s.dex[id] = { shiny: !!s.caught[id].shiny }; });
     return s;
   }
