@@ -1,7 +1,7 @@
 :root {
   --ink: #f8f7ff; --muted: #b9b6e0;
   --glass: rgba(255, 255, 255, .09); --glass2: rgba(255, 255, 255, .16); --line: rgba(255, 255, 255, .22);
-  --g: #22c55e; --v: #3b82f6; --k: #f59e0b; --r: #ec4899; --gold: #fbbf24;
+  --g: #22c55e; --v: #3b82f6; --k: #f59e0b; --r: #ec4899; --d: #14b8a6; --l: #a78bfa; --gold: #fbbf24;
 }
 * { box-sizing: border-box; }
 html { background: #0b2447; }
@@ -64,6 +64,8 @@ h2 { font-size: 1.25rem; }
 .btn.v { background: linear-gradient(#60a5fa, #2563eb); box-shadow: 0 4px 0 #1e3a8a; }
 .btn.k { background: linear-gradient(#fbbf24, #ea580c); box-shadow: 0 4px 0 #7c2d12; }
 .btn.r { background: linear-gradient(#f472b6, #db2777); box-shadow: 0 4px 0 #831843; }
+.btn.d { background: linear-gradient(#2dd4bf, #0d9488); box-shadow: 0 4px 0 #134e4a; }
+.btn.l { background: linear-gradient(#c4b5fd, #7c3aed); box-shadow: 0 4px 0 #3b0764; }
 .btn.mix { background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7); box-shadow: 0 4px 0 #3b0764; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
 .btn.danger { background: linear-gradient(#f87171, #b91c1c); box-shadow: 0 4px 0 #450a0a; }
 .linkbtn { background: none; border: 0; color: #93c5fd; cursor: pointer; font: inherit; padding: 4px 0; text-decoration: underline; }
@@ -78,19 +80,19 @@ h2 { font-size: 1.25rem; }
 .region.locked { opacity: .55; filter: saturate(.6); }
 .routes { margin-top: 10px; }
 .tag { display: inline-block; font-size: .75rem; padding: 1px 10px; border-radius: 999px; background: var(--glass2); font-weight: 600; }
-.tag.g { background: var(--g); } .tag.v { background: var(--v); } .tag.k { background: var(--k); color: #3b2300; } .tag.r { background: var(--r); }
+.tag.g { background: var(--g); } .tag.v { background: var(--v); } .tag.k { background: var(--k); color: #3b2300; } .tag.r { background: var(--r); } .tag.d { background: var(--d); color: #022c22; } .tag.l { background: var(--l); }
 
 /* ---------- chips, candy, skills ---------- */
 .chip { display: inline-block; padding: 2px 11px; border-radius: 999px; font-size: .85rem; font-weight: 600; background: var(--glass2); }
-.chip.g { background: var(--g); color: #052e16; } .chip.v { background: var(--v); } .chip.k { background: var(--k); color: #3b2300; } .chip.r { background: var(--r); }
+.chip.g { background: var(--g); color: #052e16; } .chip.v { background: var(--v); } .chip.k { background: var(--k); color: #3b2300; } .chip.r { background: var(--r); } .chip.d { background: var(--d); color: #022c22; } .chip.l { background: var(--l); }
 .chip.xp { background: #6d28d9; } .chip.combo { background: linear-gradient(90deg, #f97316, #ef4444); }
 .candy-row { margin-top: 8px; }
 .skill { margin: 8px 0; }
 .skillname { display: flex; justify-content: space-between; }
-.c-g { color: #4ade80; } .c-v { color: #60a5fa; } .c-k { color: #fbbf24; } .c-r { color: #f472b6; }
+.c-g { color: #4ade80; } .c-v { color: #60a5fa; } .c-k { color: #fbbf24; } .c-r { color: #f472b6; } .c-d { color: #2dd4bf; } .c-l { color: #c4b5fd; }
 .bar { height: 10px; background: rgba(0, 0, 0, .35); border-radius: 5px; overflow: hidden; margin: 4px 0; }
 .bar i { display: block; height: 100%; transition: width .5s; }
-.bar.g i { background: var(--g); } .bar.v i { background: var(--v); } .bar.k i { background: var(--k); } .bar.r i { background: var(--r); }
+.bar.g i { background: var(--g); } .bar.v i { background: var(--v); } .bar.k i { background: var(--k); } .bar.r i { background: var(--r); } .bar.d i { background: var(--d); } .bar.l i { background: var(--l); }
 
 /* ---------- Pokémon ---------- */
 .sprite { image-rendering: pixelated; width: 96px; height: 96px; object-fit: contain; }
@@ -209,3 +211,14 @@ label.toggle { cursor: pointer; user-select: none; }
 .reportlist { max-height: 320px; overflow: auto; margin-top: 8px; display: grid; gap: 6px; }
 .reportitem { background: var(--glass2); border-radius: 10px; padding: 6px 10px; }
 .legendhead { margin: 18px 4px 6px; padding: 6px 12px; border-radius: 12px; display: flex; gap: 8px; align-items: center; }
+
+/* ---------- reading & listening ---------- */
+.passage { background: rgba(0, 0, 0, .28); border-left: 5px solid var(--d); border-radius: 12px; padding: 12px 16px; margin: 10px 0 4px; font-size: 1.3rem; line-height: 2.1; }
+.passage ruby rt { font-size: .5em; }
+.audio { margin: 8px 0 4px; }
+.script { background: rgba(0, 0, 0, .28); border-left: 5px solid var(--l); border-radius: 12px; padding: 8px 14px; margin: 10px 0; }
+.script .line { margin: 6px 0; font-size: 1.1rem; }
+.script .jp ruby rt { font-size: .5em; }
+.sp { display: inline-block; width: 1.6em; text-align: center; border-radius: 50%; }
+.sp.m { background: #3b82f6; } .sp.f { background: #ec4899; }
+details.trans { margin-top: 8px; } details.trans summary { cursor: pointer; color: #93c5fd; }

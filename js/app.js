@@ -11,14 +11,19 @@
     g: { name: "Grammar", candy: "Grammar candy" },
     v: { name: "Vocabulary", candy: "Vocab candy" },
     k: { name: "Kanji", candy: "Kanji candy" },
-    r: { name: "Romaji", candy: "Romaji candy" }
+    r: { name: "Romaji", candy: "Romaji candy" },
+    d: { name: "Reading", candy: "Reading candy" },
+    l: { name: "Listening", candy: "Listening candy" }
   };
+  const SKILL_KEYS = ["g", "v", "k", "r", "d", "l"];
   const ROUTES = [
     { id: "mixed", label: "Mixed route", cls: "mix" },
     { id: "g", label: "Grammar", cls: "g" },
     { id: "v", label: "Vocabulary", cls: "v" },
     { id: "k", label: "Kanji only", cls: "k" },
-    { id: "r", label: "Romaji reading", cls: "r" }
+    { id: "r", label: "Romaji reading", cls: "r" },
+    { id: "d", label: "Reading", cls: "d" },
+    { id: "l", label: "Listening", cls: "l" }
   ];
   // Each JLPT level is a region. `levels` = skill levels you must reach (in all four skills) before the Gym Leader exam.
   const REGIONS = [
@@ -35,7 +40,7 @@
   const regionLevel = (r, t) => Math.min(r.levels, Math.floor(S().prog[r.cls][t] / LEVEL_STEP) + 1);
   const isUnlocked = (r) => !!S().unlocked[r.cls];
   const earlyPass = (r) => r === REGIONS[0] && !!S().placement && S().placement.score >= 13; // strong placement result
-  const bossReady = (r) => isUnlocked(r) && (earlyPass(r) || ["g", "v", "k", "r"].every((t) => S().prog[r.cls][t] >= lvNeed(r.levels)));
+  const bossReady = (r) => isUnlocked(r) && activeSkills(r).length > 0 && (earlyPass(r) || activeSkills(r).every((t) => S().prog[r.cls][t] >= lvNeed(r.levels)));
   const levelOf = (xp) => Math.floor(xp / 100) + 1;
   const hue = (id) => (id * 47) % 360;
   const pad = (id) => String(id).padStart(3, "0");
@@ -61,11 +66,19 @@
     const lv = region.n;
     if (t === "k") return window.buildKanjiQuestions().filter((q) => q.lv === lv).concat(window.buildVocabQuestions(lv, "k"));
     if (t === "r") return window.ROMAJI_SENTENCES.filter((s) => (s.lv || 5) === lv).map((s) => ({ id: s.id, t: "r", lv, d: s.d, s: s.s, k: s.k, en: s.en }));
+    if (t === "d") return window.buildReadingQuestions(lv);
+    if (t === "l") return window.buildListeningQuestions(lv);
     const written = window.QUESTIONS.filter((q) => q.t === t && q.lv === lv);
     if (t === "g") return written.concat(window.buildGrammarQuestions(lv));
     return t === "v" ? written.concat(window.buildVocabQuestions(lv, "v")) : written;
   }
-  const contentCount = (region) => ["g", "v", "k", "r"].reduce((n, t) => n + poolOf(t, region).length, 0);
+  // How many questions each skill has in a region (cached: pools are rebuilt with fresh distractors on every use).
+  const sizes = {};
+  const poolSize = (t, r) => { const k = t + r.n; if (!(k in sizes)) sizes[k] = poolOf(t, r).length; return sizes[k]; };
+  const activeSkills = (r) => SKILL_KEYS.filter((t) => poolSize(t, r) > 0);
+  const contentCount = (region) => SKILL_KEYS.reduce((n, t) => n + poolSize(t, region), 0);
+  const examSize = (r) => EXAM_PER_SKILL * activeSkills(r).length;
+
   // Questions answered wrong before are weighted heavier so they come back for review.
   function pickQuestions(pool, n) {
     const st = S();
@@ -73,13 +86,27 @@
     return pool.map((q) => ({ q, k: Math.random() * Math.max(0.2, 1 + (st.wrong[q.id] || 0) * 3 - Math.min(st.right[q.id] || 0, 3) * 0.2) }))
       .sort((x, y) => y.k - x.k).slice(0, n).map((x) => x.q);
   }
+  // Reading questions are picked passage by passage so you read each text once and answer all its questions.
+  function pickReading(pool, n) {
+    const st = S(), groups = {};
+    pool.filter((q) => !st.reports[q.id]).forEach((q) => { (groups[q.group] = groups[q.group] || []).push(q); });
+    const weight = (g) => g.reduce((w, q) => w + 1 + (st.wrong[q.id] || 0) * 3 - Math.min(st.right[q.id] || 0, 3) * 0.2, 0) / g.length;
+    let out = [];
+    Object.values(groups).map((g) => ({ g, k: Math.random() * Math.max(0.2, weight(g)) })).sort((x, y) => y.k - x.k)
+      .forEach(({ g }) => { if (out.length < n) out = out.concat(g); });
+    return out.slice(0, n);
+  }
+  function pickType(t, n, region) {
+    const pool = poolOf(t, region);
+    return t === "d" && n > 1 ? pickReading(pool, n) : pickQuestions(pool, n);
+  }
   function pickForRoute(route, n, region) {
-    if (route !== "mixed") return pickQuestions(poolOf(route, region), n);
-    const order = shuffle(["g", "v", "k", "r"].filter((t) => poolOf(t, region).length)), counts = {};
+    if (route !== "mixed") return pickType(route, n, region);
+    const order = shuffle(activeSkills(region)), counts = {};
     if (!order.length) return [];
     for (let i = 0; i < n; i++) counts[order[i % order.length]] = (counts[order[i % order.length]] || 0) + 1;
     let out = [];
-    Object.keys(counts).forEach((t) => { out = out.concat(pickQuestions(poolOf(t, region), counts[t])); });
+    Object.keys(counts).forEach((t) => { out = out.concat(pickType(t, counts[t], region)); });
     return shuffle(out);
   }
   function prepare(q) {
@@ -163,7 +190,10 @@
   }
 
   // ---------- reporting questions ----------
-  const questionText = (q) => (q.t === "r" ? Ruby.plain(q.s) : (q.p ? q.p + " " : "") + Ruby.plain(q.q));
+  const questionText = (q) => q.t === "r" ? Ruby.plain(q.s)
+    : q.t === "d" ? "[reading] " + Ruby.plain(q.passage).replace(/\n/g, " ").slice(0, 70) + "… / " + q.q
+    : q.t === "l" ? "[listening] " + q.lines.map((l) => Ruby.plain(l[1])).join(" / ") + " — " + q.q
+    : (q.p ? q.p + " " : "") + Ruby.plain(q.q);
   const answerText = (q) => (q.t === "r" ? Romaji.expectedVariants(q.k)[0] : Ruby.plain(q.c[q.a]));
   function reportButton(q) {
     const done = !!S().reports[q.id];
@@ -197,11 +227,19 @@
         <div class="row"><button class="linkbtn" id="hint">💡 Show meaning</button><span class="muted" id="hintbox"></span></div>
         <div class="feedback" id="fb"></div>`;
     }
-    return head + (q.p ? `<div class="prompt">${esc(q.p)}</div>` : "") +
+    const passage = q.t === "d" ? `<div class="passage">${R(q.passage)}</div><div class="prompt">Question</div>` : "";
+    const audio = q.t === "l" ? `<div class="prompt">Listen to the conversation, then answer the question.</div>
+      <div class="row audio"><button class="btn l" id="play">▶ Play</button><button class="btn l small" id="playslow">🐢 Slow</button>
+        <button class="btn small" id="showscript">👁 Show script</button></div>
+      <div class="muted small" id="ttsnote"></div><div class="script" id="script" style="display:none"></div>` : "";
+    return head + passage + audio + (q.p ? `<div class="prompt">${esc(q.p)}</div>` : "") +
       `<div class="question ${q.big ? "kanji-big" : ""}">${R(q.q)}</div>
        <div class="choices ${q.cbig ? "kanji-choices" : ""}">${it.choices.map((c, k) => `<button class="btn choice" data-k="${k}"><kbd>${k + 1}</kbd> ${R(c)}</button>`).join("")}</div>
        <div class="feedback" id="fb"></div>`;
   }
+
+  const scriptHTML = (q) => q.lines.map(([sp, jp, en]) =>
+    `<div class="line"><b class="sp ${sp}">${sp === "m" ? "♂" : "♀"}</b> <span class="jp">${R(jp)}</span><br><span class="muted small">${esc(en)}</span></div>`).join("");
 
   // ui: { box, onUpdate(correct,total), reward(q, ok, combo) -> html }
   function runQuiz(items, ui, onDone) {
@@ -224,7 +262,7 @@
         <div style="margin-top:12px"><button class="btn gold" id="next">${i + 1 < items.length ? "Next ▶" : "Finish ▶"}</button></div>
         ${reportButton(it.q)}`;
       bindReport(it.q);
-      document.getElementById("next").addEventListener("click", () => { i++; i < items.length ? show() : (setKeys(null), onDone(correct, results, maxCombo)); });
+      document.getElementById("next").addEventListener("click", () => { TTS.stop(); i++; i < items.length ? show() : (setKeys(null), onDone(correct, results, maxCombo)); });
       document.getElementById("next").focus();
     };
 
@@ -237,7 +275,10 @@
         else if (idx === k) b.classList.add("wrong");
       });
       const filled = q.q.includes("＿＿") ? `<div class="jp">${R(q.q.replace("＿＿", q.c[q.a]))}</div>` : "";
-      finishStep(ok, "", `${filled}<div>${esc(q.en)}</div>${q.note ? `<div class="muted">${R(q.note)}</div>` : ""}`);
+      const extra = q.t === "d" ? `<details class="trans"><summary>Show translation of the passage</summary><div>${esc(q.ptrans)}</div></details>`
+        : q.t === "l" ? `<div class="script">${scriptHTML(q)}</div>` : "";
+      if (q.t === "l") { const pre = document.getElementById("script"); if (pre) pre.style.display = "none"; }
+      finishStep(ok, "", `${filled}<div>${esc(q.en)}</div>${q.note ? `<div class="muted">${R(q.note)}</div>` : ""}${extra}`);
     };
 
     const answerRomaji = () => {
@@ -270,6 +311,14 @@
         setKeys(null);
       } else {
         box().querySelectorAll(".choice").forEach((b) => b.addEventListener("click", () => answerChoice(+b.dataset.k)));
+        if (it.q.t === "l") {
+          const note = document.getElementById("ttsnote"), play = (rate) => { if (TTS.supported()) TTS.speak(it.q.lines, { rate }); };
+          if (!TTS.supported()) note.textContent = "⚠ Your browser can't read aloud. Use Chrome, Edge or Safari on a laptop — or tap “Show script”.";
+          else if (!TTS.hasJapanese()) note.textContent = "⚠ No Japanese voice found on this device yet (it may still be loading). If you hear nothing, install a Japanese voice in your system settings, or tap “Show script”.";
+          document.getElementById("play").addEventListener("click", () => play(0.9));
+          document.getElementById("playslow").addEventListener("click", () => play(0.65));
+          document.getElementById("showscript").addEventListener("click", () => { const sc = document.getElementById("script"); sc.innerHTML = scriptHTML(it.q); sc.style.display = "block"; });
+        }
         setKeys((e) => {
           if (e.target.tagName === "INPUT") return;
           const n = +e.key;
@@ -307,16 +356,16 @@
     }
     const noContent = contentCount(r) === 0;
     const routes = ROUTES.map((x) => {
-      const empty = x.id === "mixed" ? noContent : poolOf(x.id, r).length === 0;
+      const empty = x.id === "mixed" ? noContent : poolSize(x.id, r) === 0;
       return `<button class="btn ${x.cls}" data-go="encounter" data-arg="${x.id}@${r.cls}" ${empty ? "disabled" : ""}>${x.label}</button>`;
     }).join("");
     const cap = lvNeed(r.levels);
-    const progress = ["g", "v", "k", "r"].map((t) => {
+    const progress = activeSkills(r).map((t) => {
       const c = st.prog[r.cls][t], lvl = regionLevel(r, t), max = c >= cap, into = c % LEVEL_STEP;
       return `<div class="skill"><div class="skillname"><b class="c-${t}">${SKILLS[t].name}</b> <span>${max ? "MAX " : ""}Lv ${lvl}/${r.levels}</span></div>
         <div class="bar ${t}"><i style="width:${max ? 100 : (into / LEVEL_STEP) * 100}%"></i></div></div>`;
     }).join("");
-    const total = ["g", "v", "k", "r"].reduce((n, t) => n + poolOf(t, r).length, 0);
+    const total = contentCount(r);
     const ready = bossReady(r), badge = st.badges[r.cls];
     return `<div class="panel region ${r.cls}">
       <h3><span>${r.name}</span> <span class="tag">${r.lv}</span>${badge ? ' <span class="tag gold">🏅 Badge</span>' : ""}</h3>
@@ -326,7 +375,7 @@
       ${noContent ? "" : `<div class="progress">${progress}</div>
       <div class="row" style="margin-top:8px">
         <button class="btn gold" data-go="boss" data-arg="${r.cls}" ${ready ? "" : "disabled"}>🏆 ${badge ? "Rematch" : "Gym Leader exam"}</button>
-        <span class="muted small">${ready ? (earlyPass(r) && !["g", "v", "k", "r"].every((t) => st.prog[r.cls][t] >= cap) ? "Your placement score lets you challenge early! " : "") + `${EXAM_PER_SKILL * 4} questions, pass with ${Math.ceil(EXAM_PER_SKILL * 4 * PASS_RATE)}.` : `Reach Lv ${r.levels} in all four skills to unlock the exam.`}</span>
+        <span class="muted small">${ready ? (earlyPass(r) && !activeSkills(r).every((t) => st.prog[r.cls][t] >= cap) ? "Your placement score lets you challenge early! " : "") + `${examSize(r)} questions, pass with ${Math.ceil(examSize(r) * PASS_RATE)}.` : `Reach Lv ${r.levels} in all ${activeSkills(r).length} skills to unlock the exam.`}</span>
       </div>`}
     </div>`;
   }
@@ -336,7 +385,7 @@
     const r = REGIONS.find((x) => x.cls === regionCls);
     if (!r || !bossReady(r)) return home();
     let items = [];
-    ["g", "v", "k", "r"].forEach((t) => { items = items.concat(pickQuestions(poolOf(t, r), EXAM_PER_SKILL)); });
+    activeSkills(r).forEach((t) => { items = items.concat(pickType(t, EXAM_PER_SKILL, r)); });
     items = shuffle(items).map(prepare);
     if (!items.length) return home();
     const needed = Math.ceil(items.length * PASS_RATE), ctx = { xp: 0, candy: {}, levelUps: 0, region: r.cls };
@@ -400,7 +449,7 @@
          ${ready ? `<span class="chip combo">⬆ ${ready} ready to evolve!</span>` : ""}</div>`
       : `<div class="empty">No Pokémon yet. Start an encounter below and catch your first one! ${ballIcon}</div>`;
 
-    const candyBag = ["g", "v", "k", "r"].map((t) => candyChip(t, st.candy[t])).join("");
+    const candyBag = SKILL_KEYS.map((t) => candyChip(t, st.candy[t])).join("");
     const regions = REGIONS.map(regionCard).join("");
 
     render(`
@@ -790,6 +839,7 @@
 
   function go(screen, arg) {
     screenToken++;
+    TTS.stop();
     setKeys(null);
     if (screen === "encounter") encounter(arg || "mixed");
     else ({ home, placement, dex, settings, team, legends, mon: () => mon(arg), boss: () => boss(arg) }[screen] || home)();

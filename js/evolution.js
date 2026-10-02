@@ -1,8 +1,8 @@
 // Evolution lines (generated pairs in pokemon.js). Each evolution costs candy of one skill type:
-// g = Grammar, v = Vocabulary, k = Kanji, r = Romaji.
+// g = Grammar, v = Vocabulary, k = Kanji, r = Romaji, d = Reading, l = Listening.
 window.Evo = (function () {
-  const TYPES = ["g", "v", "k", "r"];
-  const EEVEE = { 134: "v", 135: "k", 136: "g", 196: "r", 197: "v" };
+  const TYPES = ["g", "v", "k", "r", "d", "l"];
+  const EEVEE = { 134: "v", 135: "k", 136: "g", 196: "d", 197: "l" };
   const genOf = (id) => window.GEN_RANGES.findIndex((r) => id >= r[0] && id <= r[1]) + 1;
   const next = {}, pre = {};
   window.EVO_PAIRS.forEach(([f, t]) => { (next[f] = next[f] || []).push(t); (pre[t] = pre[t] || []).push(f); });
@@ -14,7 +14,7 @@ window.Evo = (function () {
   function options(id) {
     return (next[id] || []).map((to, i) => ({
       to,
-      type: id === 133 ? EEVEE[to] : TYPES[(id + i) % 4],
+      type: id === 133 ? EEVEE[to] : TYPES[(id + i) % 6],
       cost: id === 133 ? 25 : effPre(id).length ? 30 : next[to] ? 15 : 20
     }));
   }

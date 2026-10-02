@@ -4,7 +4,9 @@ A free, Pokémon-themed web app for studying Japanese from N5 up to N1.
 No build step and no install: open `index.html` in a browser (or use GitHub Pages).
 
 ## Features
-- **Five routes per region:** Mixed, Grammar, Vocabulary, Kanji only, Romaji reading
+- **Seven routes per region:** Mixed, Grammar, Vocabulary, Kanji only, Romaji reading, Reading, Listening
+- **Reading:** short passages (notices, emails, diary entries…) with comprehension questions; the passage translation appears after you answer
+- **Listening:** dialogues read aloud by your browser's text-to-speech (needs a Japanese voice, e.g. Kyoko/Otoya on macOS, Haruka/Ichiro on Windows); the script stays hidden until you answer
 - **Romaji reading:** a sentence with furigana is shown and you type its romanization
   (accepts `wa/ha`, `o/wo`, `shi/si`, `tsu/tu`, macrons, and long-vowel shortcuts with a tip)
 - **Kanji only:** meaning, word reading, and kanji recognition for ~90 N5-level kanji
@@ -20,8 +22,8 @@ No build step and no install: open `index.html` in a browser (or use GitHub Page
 
 ## Regions and levels
 Each JLPT level is a region with its own question pool. Skill levels (Grammar, Vocabulary, Kanji, Romaji) rise with correct answers
-(25 per level). Reach the region's level in all four skills (N5: Lv 5, N4: Lv 10, N3: Lv 15, N2: Lv 20, N1: Lv 25; N2/N1 content is still to come) to unlock its
-Gym Leader exam (20 questions, pass with 16). Passing earns a badge and opens the next region.
+(25 per level). Reach the region's level in every skill that has content (Grammar, Vocabulary, Kanji, Romaji, Reading, Listening) (N5: Lv 5, N4: Lv 10, N3: Lv 15, N2: Lv 20, N1: Lv 25; N2/N1 content is still to come) to unlock its
+Gym Leader exam (5 questions per skill, pass with 80%). Passing earns a badge and opens the next region.
 
 ## Adding content
 - Grammar/vocabulary: `js/data-n5.js`, `js/data-n5-more.js`, `js/data-n4.js` (furigana markup `{漢字|かんじ}`, blank `＿＿`)
@@ -29,6 +31,7 @@ Gym Leader exam (20 questions, pass with 16). Passing earns a badge and opens th
 - N3 grammar patterns (`js/data-grammar-n3.js`) are turned into questions by `js/grammar.js`; wrong answers always come from a different category
 - Check your edits with `node tools/check_content.js`
 - Kanji: `js/data-kanji.js` (N5), `js/data-kanji-n4.js` (N4), `js/data-kanji-n3.js` (N3)
+- Reading passages: `js/data-reading.js`; listening dialogues: `js/data-listening.js`
 - Romaji sentences: `js/data-romaji.js`, `js/data-romaji-n4.js`, `js/data-romaji-n3.js` (`k` is the hiragana reading, split into words)
 
 ## Regenerating Pokémon data
