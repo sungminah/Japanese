@@ -59,9 +59,10 @@
   // ---------- question pools ----------
   function poolOf(t, region) {
     const lv = region.n;
-    if (t === "k") return window.buildKanjiQuestions().filter((q) => q.lv === lv);
+    if (t === "k") return window.buildKanjiQuestions().filter((q) => q.lv === lv).concat(window.buildVocabQuestions(lv, "k"));
     if (t === "r") return window.ROMAJI_SENTENCES.filter((s) => (s.lv || 5) === lv).map((s) => ({ id: s.id, t: "r", lv, d: s.d, s: s.s, k: s.k, en: s.en }));
-    return window.QUESTIONS.filter((q) => q.t === t && q.lv === lv);
+    const written = window.QUESTIONS.filter((q) => q.t === t && q.lv === lv);
+    return t === "v" ? written.concat(window.buildVocabQuestions(lv, "v")) : written;
   }
   const contentCount = (region) => ["g", "v", "k", "r"].reduce((n, t) => n + poolOf(t, region).length, 0);
   // Questions answered wrong before are weighted heavier so they come back for review.
@@ -728,6 +729,6 @@
     window.scrollTo(0, 0);
   }
 
-  window.__app = { go };   // handy for debugging in the console
+  window.__app = { go, poolOf, REGIONS };   // handy for debugging in the console
   go("home");
 })();

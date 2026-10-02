@@ -18,13 +18,24 @@ No build step and no install: open `index.html` in a browser (or use GitHub Page
 - Your caught Pokémon are shown on the home page; placement test, furigana toggle, export/import of progress
 - Questions answered wrong come back more often
 
+## Regions and levels
+Each JLPT level is a region with its own question pool. Skill levels (Grammar, Vocabulary, Kanji, Romaji) rise with correct answers
+(25 per level). Reach the region's level in all four skills (N5: Lv 5, N4: Lv 10, N3: Lv 15, N2: Lv 20, N1: Lv 25) to unlock its
+Gym Leader exam (20 questions, pass with 16). Passing earns a badge and opens the next region.
+
 ## Adding content
-- Grammar/vocabulary: `js/data-n5.js` (furigana markup `{漢字|かんじ}`, blank `＿＿`)
-- Kanji: `js/data-kanji.js`
-- Romaji sentences: `js/data-romaji.js` (`k` is the hiragana reading, split into words)
+- Grammar/vocabulary: `js/data-n5.js`, `js/data-n5-more.js`, `js/data-n4.js` (furigana markup `{漢字|かんじ}`, blank `＿＿`)
+- Word lists: `tools/gen_vocab.py` builds `js/data-vocab-nX.js` from the open JLPT lists; `js/vocab.js` turns them into questions
+- Check your edits with `node tools/check_content.js`
+- Kanji: `js/data-kanji.js` (N5), `js/data-kanji-n4.js` (N4)
+- Romaji sentences: `js/data-romaji.js`, `js/data-romaji-n4.js` (`k` is the hiragana reading, split into words)
 
 ## Regenerating Pokémon data
 `python3 tools/gen_pokemon.py` rebuilds `js/pokemon.js` (names, legendaries, evolution pairs) from the
 [PokeAPI data repo](https://github.com/PokeAPI/api-data). Sprites live in `img/pokemon/` (and `shiny/`).
 
 Pokémon sprites come from [PokeAPI/sprites](https://github.com/PokeAPI/sprites). Pokémon is a trademark of Nintendo / Game Freak / The Pokémon Company; this is a non-commercial study project.
+
+## Credits
+JLPT vocabulary lists: [elzup/jlpt-word-list](https://github.com/elzup/jlpt-word-list) (MIT), word data from
+[tanos.co.uk](http://www.tanos.co.uk/jlpt/) by Jonathan Waller (CC BY). Pokémon data: [PokeAPI](https://pokeapi.co).
