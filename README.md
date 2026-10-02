@@ -11,7 +11,7 @@ No build step and no install: open `index.html` in a browser (or use GitHub Page
 - **Catching:** 4+ correct = guaranteed catch, 3 correct = 60%, perfect run = bonus
 - **Scoring:** XP and trainer level, per-skill candy (+ combo bonus), skill levels, daily streak bonus
 - **Evolution:** spend candy (each evolution needs one skill's candy) to evolve your Pokémon
-- **251 Pokémon (Kanto + Johto)** in one shared Pokédex. Wild spawns favour Pokémon that can evolve
+- **386 Pokémon (Kanto + Johto + Hoenn)** in one shared Pokédex. Wild spawns favour Pokémon that can evolve
   (basic forms are common, evolved forms rare); legendaries never spawn in the wild
 - **Legend quests:** earn Articuno, Zapdos, Moltres, Mewtwo and Mew through study milestones (Johto legends unlock later)
 - **Filters:** Pokédex and My Pokémon can be filtered by place, caught/missing/shiny/ready-to-evolve/etc., searched and sorted
@@ -20,15 +20,16 @@ No build step and no install: open `index.html` in a browser (or use GitHub Page
 
 ## Regions and levels
 Each JLPT level is a region with its own question pool. Skill levels (Grammar, Vocabulary, Kanji, Romaji) rise with correct answers
-(25 per level). Reach the region's level in all four skills (N5: Lv 5, N4: Lv 10, N3: Lv 15, N2: Lv 20, N1: Lv 25) to unlock its
+(25 per level). Reach the region's level in all four skills (N5: Lv 5, N4: Lv 10, N3: Lv 15, N2: Lv 20, N1: Lv 25; N2/N1 content is still to come) to unlock its
 Gym Leader exam (20 questions, pass with 16). Passing earns a badge and opens the next region.
 
 ## Adding content
 - Grammar/vocabulary: `js/data-n5.js`, `js/data-n5-more.js`, `js/data-n4.js` (furigana markup `{漢字|かんじ}`, blank `＿＿`)
 - Word lists: `tools/gen_vocab.py` builds `js/data-vocab-nX.js` from the open JLPT lists; `js/vocab.js` turns them into questions
+- N3 grammar patterns (`js/data-grammar-n3.js`) are turned into questions by `js/grammar.js`; wrong answers always come from a different category
 - Check your edits with `node tools/check_content.js`
-- Kanji: `js/data-kanji.js` (N5), `js/data-kanji-n4.js` (N4)
-- Romaji sentences: `js/data-romaji.js`, `js/data-romaji-n4.js` (`k` is the hiragana reading, split into words)
+- Kanji: `js/data-kanji.js` (N5), `js/data-kanji-n4.js` (N4), `js/data-kanji-n3.js` (N3)
+- Romaji sentences: `js/data-romaji.js`, `js/data-romaji-n4.js`, `js/data-romaji-n3.js` (`k` is the hiragana reading, split into words)
 
 ## Regenerating Pokémon data
 `python3 tools/gen_pokemon.py` rebuilds `js/pokemon.js` (names, legendaries, evolution pairs) from the

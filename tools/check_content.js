@@ -6,7 +6,7 @@
 const fs = require("fs"), path = require("path");
 global.window = {};
 const load = (f) => { const p = path.join(__dirname, "..", "js", f); if (fs.existsSync(p)) require(p); };
-["pokemon.js", "data-n5.js", "data-n5-more.js", "data-n4.js", "data-n4-more.js", "data-vocab-n5.js", "data-vocab-n4.js", "data-kanji.js", "data-kanji-n4.js", "data-romaji.js", "data-romaji-n4.js", "data-romaji-n4-more.js", "romaji.js"].forEach(load);
+["pokemon.js", "data-n5.js", "data-n5-more.js", "data-n4.js", "data-n4-more.js", "data-n3.js", "data-grammar-n3.js", "data-vocab-n5.js", "data-vocab-n4.js", "data-vocab-n3.js", "data-kanji.js", "data-kanji-n4.js", "data-kanji-n3.js", "data-romaji.js", "data-romaji-n4.js", "data-romaji-n4-more.js", "data-romaji-n3.js", "romaji.js"].forEach(load);
 const W = window;
 let problems = 0;
 const bad = (m) => { console.log("PROBLEM:", m); problems++; };
@@ -40,6 +40,8 @@ const unknown = new Map();
 const scan = (text, where) => { for (const m of text.matchAll(/\{([^|}]+)\|([^}]+)\}/g)) { const k = m[1] + "|" + m[2]; if (!known.has(k) && !unknown.has(k)) unknown.set(k, where); } };
 (W.QUESTIONS || []).forEach((q) => { scan(q.q + q.c.join("") + q.note + q.en, q.id); });
 (W.ROMAJI_SENTENCES || []).forEach((x) => scan(x.s, x.id));
+Object.values(W.GRAMMAR || {}).forEach((l) => l.forEach((g) => scan(g[0] + g[2], g[0])));
+(W.KANJI || []).forEach(([c, m, on, kun, words]) => words.forEach(([w]) => { if (!w.includes(c)) bad(`kanji ${c}: example word ${w} lacks the kanji`); }));
 console.log(`furigana pairs not in word lists (${unknown.size}) — check these by eye:`);
 console.log([...unknown].map(([k, w]) => `${k.replace("|", "→")} [${w}]`).join("  "));
 console.log(problems ? `\n${problems} problem(s)` : "\nno structural problems");

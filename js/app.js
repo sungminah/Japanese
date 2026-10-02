@@ -24,7 +24,7 @@
   const REGIONS = [
     { name: "Kanto", lv: "N5", n: 5, cls: "kanto", levels: 5, guardian: 95, range: window.GEN_RANGES[0] },
     { name: "Johto", lv: "N4", n: 4, cls: "johto", levels: 10, guardian: 208, range: window.GEN_RANGES[1] },
-    { name: "Hoenn", lv: "N3", n: 3, cls: "hoenn", levels: 15 },
+    { name: "Hoenn", lv: "N3", n: 3, cls: "hoenn", levels: 15, guardian: 306, range: window.GEN_RANGES[2] },
     { name: "Sinnoh", lv: "N2", n: 2, cls: "sinnoh", levels: 20 },
     { name: "Unova", lv: "N1", n: 1, cls: "unova", levels: 25 }
   ];
@@ -62,6 +62,7 @@
     if (t === "k") return window.buildKanjiQuestions().filter((q) => q.lv === lv).concat(window.buildVocabQuestions(lv, "k"));
     if (t === "r") return window.ROMAJI_SENTENCES.filter((s) => (s.lv || 5) === lv).map((s) => ({ id: s.id, t: "r", lv, d: s.d, s: s.s, k: s.k, en: s.en }));
     const written = window.QUESTIONS.filter((q) => q.t === t && q.lv === lv);
+    if (t === "g") return written.concat(window.buildGrammarQuestions(lv));
     return t === "v" ? written.concat(window.buildVocabQuestions(lv, "v")) : written;
   }
   const contentCount = (region) => ["g", "v", "k", "r"].reduce((n, t) => n + poolOf(t, region).length, 0);
@@ -676,16 +677,34 @@
   const dex = () => listScreen("dex");
 
   // ---------- Legend quests: legendaries are earned, they never appear in the wild ----------
-  const kp = (st, t) => st.prog.kanto[t];
+  const SK = { g: "Grammar", v: "Vocabulary", k: "Kanji", r: "Romaji" };
+  const regionByCls = (c) => REGIONS.find((r) => r.cls === c);
+  const rp = (st, reg, t) => st.prog[reg][t];
+  const claimed = (st, ids) => ids.filter((i) => st.legends[i]).length;
+  const streakNow = (st) => Math.max(st.bestStreak || 0, st.streak);
+  const skillQuest = (id, reg, t, lv) => ({ id, region: reg, text: `Reach ${SK[t]} Lv ${lv} in ${regionByCls(reg).name}`, prog: (st) => [rp(st, reg, t), lvNeed(lv)] });
   const LEGEND_QUESTS = [
-    { id: 144, text: "Reach Grammar Lv 3 in Kanto (N5)", prog: (st) => [kp(st, "g"), lvNeed(3)] },
-    { id: 145, text: "Reach Vocabulary Lv 3 in Kanto (N5)", prog: (st) => [kp(st, "v"), lvNeed(3)] },
-    { id: 146, text: "Reach Kanji Lv 3 in Kanto (N5)", prog: (st) => [kp(st, "k"), lvNeed(3)] },
-    { id: 150, text: "Claim Articuno, Zapdos and Moltres, and reach Romaji Lv 3 in Kanto",
-      prog: (st) => [[144, 145, 146].filter((i) => st.legends[i]).length + (kp(st, "r") >= lvNeed(3) ? 1 : 0), 4], plain: true },
-    { id: 151, text: "Reach a 7-day streak", prog: (st) => [Math.max(st.bestStreak || 0, st.streak), 7], plain: true }
+    // Kanto (N5)
+    skillQuest(144, "kanto", "g", 3), skillQuest(145, "kanto", "v", 3), skillQuest(146, "kanto", "k", 3),
+    { id: 150, region: "kanto", text: "Claim Articuno, Zapdos and Moltres, and reach Romaji Lv 3 in Kanto",
+      prog: (st) => [claimed(st, [144, 145, 146]) + (rp(st, "kanto", "r") >= lvNeed(3) ? 1 : 0), 4] },
+    { id: 151, region: "kanto", text: "Reach a 7-day streak", prog: (st) => [streakNow(st), 7] },
+    // Johto (N4)
+    skillQuest(243, "johto", "g", 5), skillQuest(244, "johto", "v", 5), skillQuest(245, "johto", "k", 5),
+    { id: 249, region: "johto", text: "Claim Raikou, Entei and Suicune, and reach Romaji Lv 5 in Johto",
+      prog: (st) => [claimed(st, [243, 244, 245]) + (rp(st, "johto", "r") >= lvNeed(5) ? 1 : 0), 4] },
+    { id: 250, region: "johto", text: "Claim Lugia and earn the Johto badge", prog: (st) => [(st.legends[249] ? 1 : 0) + (st.badges.johto ? 1 : 0), 2] },
+    { id: 251, region: "johto", text: "Reach a 14-day streak", prog: (st) => [streakNow(st), 14] },
+    // Hoenn (N3)
+    skillQuest(377, "hoenn", "g", 8), skillQuest(378, "hoenn", "v", 8), skillQuest(379, "hoenn", "k", 8),
+    skillQuest(380, "hoenn", "r", 8),
+    { id: 381, region: "hoenn", text: "Claim Latias and the three Regis (Regirock, Regice, Registeel)", prog: (st) => [claimed(st, [377, 378, 379, 380]), 4] },
+    { id: 382, region: "hoenn", text: "Earn the Hoenn badge", prog: (st) => [st.badges.hoenn ? 1 : 0, 1] },
+    { id: 383, region: "hoenn", text: "Claim Kyogre and reach Vocabulary Lv 12 in Hoenn", prog: (st) => [(st.legends[382] ? 1 : 0) + (rp(st, "hoenn", "v") >= lvNeed(12) ? 1 : 0), 2] },
+    { id: 384, region: "hoenn", text: "Claim Kyogre and Groudon", prog: (st) => [claimed(st, [382, 383]), 2] },
+    { id: 385, region: "hoenn", text: "Reach a 21-day streak", prog: (st) => [streakNow(st), 21] },
+    { id: 386, region: "hoenn", text: "Claim every other Hoenn legendary", prog: (st) => [claimed(st, [377, 378, 379, 380, 381, 382, 383, 384, 385]), 9] }
   ];
-  const JOHTO_LEGENDS = [243, 244, 245, 249, 250, 251];
 
   function claimLegend(id) {
     const st = S(), q = LEGEND_QUESTS.find((x) => x.id === id);
@@ -703,7 +722,10 @@
 
   function legends() {
     const st = S();
-    const cards = LEGEND_QUESTS.map((q) => {
+    const card = (q) => {
+      const reg = regionByCls(q.region);
+      if (!isUnlocked(reg)) return `<div class="legendcard locked">${sprite(q.id, false, "unknown")}<h3>???</h3>
+        <div class="muted small">🔒 Opens with ${reg.name} (${reg.lv})</div></div>`;
       const [a, b] = q.prog(st), got = !!st.legends[q.id], done = a >= b;
       return `<div class="legendcard ${got ? "got" : done ? "ready" : ""}" style="--h:${hue(q.id)}">
         ${sprite(q.id, false, got ? "float" : "unknown")}
@@ -714,15 +736,16 @@
              <div class="muted small">${Math.min(a, b)} / ${b}</div>
              <button class="btn gold small" data-claim="${q.id}" ${done ? "" : "disabled"}>${done ? "Claim!" : "Keep going"}</button>`}
       </div>`;
-    }).join("");
-    const locked = JOHTO_LEGENDS.map((id) => `<div class="legendcard locked">${sprite(id, false, "unknown")}
-        <h3>???</h3><div class="muted small">🔒 Opens with Johto (N4)</div></div>`).join("");
+    };
+    const groups = REGIONS.filter((r) => LEGEND_QUESTS.some((q) => q.region === r.cls)).map((r) =>
+      `<h3 class="legendhead region ${r.cls}">${r.name} <span class="tag">${r.lv}</span></h3>
+       <div class="legends">${LEGEND_QUESTS.filter((q) => q.region === r.cls).map(card).join("")}</div>`).join("");
     render(`<section class="panel row spread"><div><h2 class="pixel" style="margin:0">⭐ Legend quests</h2>
         <div class="muted small">Legendary Pokémon never appear in the wild. Earn them by studying.</div></div>
-        <button class="btn small" data-go="home">Back</button></section>
-      <div class="legends">${cards}${locked}</div>`);
+        <button class="btn small" data-go="home">Back</button></section>${groups}`);
     $app.querySelectorAll("[data-claim]").forEach((b) => b.addEventListener("click", () => claimLegend(+b.dataset.claim)));
   }
+
   function settings() {
     const st = S(), reps = Object.entries(st.reports);
     render(`<section class="panel"><h2 class="pixel">Settings</h2>
