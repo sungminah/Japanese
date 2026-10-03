@@ -1,0 +1,55 @@
+// N2 / N1 reading passages (no furigana). Same format as data-reading.js.
+window.READING = window.READING || {};
+
+window.READING[2] = [
+  { id: "p01",
+    text: "近年、リモートワークを導入する企業が増えている。通勤時間がなくなり、仕事と家庭の両立がしやすくなったという声がある一方で、同僚との雑談が減り、孤独を感じる人も少なくない。そこで、週に二、三日だけ出社する「ハイブリッド型」を選ぶ会社も出てきた。",
+    en: "In recent years, more and more companies are introducing remote work. While some say that without commuting it's easier to balance work and family, not a few people feel lonely as casual chats with colleagues decrease. So some companies have started choosing a \"hybrid\" style in which employees come to the office only two or three days a week.",
+    qs: [["What advantage of remote work is mentioned?", ["It is easier to balance work and family", "Salaries go up", "Meetings become shorter", "Fewer people are needed"]],
+         ["What problem is mentioned?", ["Some people feel lonely", "Computers are expensive", "Work takes longer", "Companies lose customers"]],
+         ["What have some companies done?", ["Adopted a hybrid style with two or three office days a week", "Banned remote work", "Moved to bigger offices", "Cut working hours in half"]]] },
+  { id: "p02",
+    text: "日本語の「すみません」は、謝る時だけでなく、感謝を伝える時にも使われる。例えば、席を譲ってもらった時に「すみません」と言うのは、「ありがとう」の気持ちを込めているのである。しかし、外国人にとっては、この使い分けが難しく感じられるようだ。",
+    en: "The Japanese \"sumimasen\" is used not only to apologise but also to express gratitude. For example, saying it when someone has given up a seat for you carries the feeling of \"thank you.\" However, foreigners seem to find this distinction difficult.",
+    qs: [["Besides apologising, when is \"sumimasen\" used?", ["To express thanks", "To say goodbye", "To ask for the bill", "To greet someone"]],
+         ["Why is it difficult for foreigners?", ["It is hard to tell which meaning is intended", "The word is too long", "It is only used by older people", "It has no English equivalent word"]]] },
+  { id: "p03",
+    text: "件名：来月の研修について\n今月二十日に予定されていた新入社員研修ですが、講師の都合により、来月五日に延期されることになりました。会場は変更ありません。なお、すでに出席の返事をいただいた方も、改めて出欠のご連絡をお願いいたします。\n人事部",
+    en: "Subject: About next month's training. The new-employee training scheduled for the 20th of this month has been postponed to the 5th of next month because of the instructor's circumstances. The venue is unchanged. Also, even those who have already replied that they'll attend are asked to confirm attendance again. — HR Department",
+    qs: [["Why was the training postponed?", ["The instructor was not available", "The venue was not available", "Too few people signed up", "Because of a national holiday"]],
+         ["What are people who already replied asked to do?", ["Confirm their attendance again", "Cancel their reply", "Choose a new venue", "Bring a colleague"]],
+         ["When will the training be held now?", ["The 5th of next month", "The 20th of this month", "The 5th of this month", "The 20th of next month"]]] },
+  { id: "p04",
+    text: "都会に住む利点は、交通や買い物が便利なことだ。反対に、田舎では自然が豊かで、家賃も安い。私は以前、都会で働いていたが、人の多さに疲れてしまい、去年、地方に引っ越した。確かに不便なこともあるが、毎朝、鳥の声で目が覚める生活は、何にも代えがたい。",
+    en: "The advantage of living in a city is the convenience of transport and shopping. By contrast, the countryside has rich nature and cheaper rent. I used to work in a city, but I got tired of the crowds and moved to the countryside last year. There are certainly inconveniences, but a life of waking every morning to birdsong is irreplaceable.",
+    qs: [["Why did the writer move?", ["The writer was tired of the crowds", "The rent in the city went up", "The writer lost a job", "The writer wanted a bigger house"]],
+         ["How does the writer feel about life now?", ["It is irreplaceable, despite some inconveniences", "It is lonely and inconvenient", "It is the same as before", "It is only a temporary arrangement"]]] },
+  { id: "p05",
+    text: "ある研究によると、一日に七時間ほど眠る人は、それより短い人や長い人に比べて、病気にかかりにくいそうだ。睡眠不足は集中力を下げるだけでなく、健康にも悪影響を与える可能性がある。忙しくても、睡眠時間を削らないことが大切だと、研究者は述べている。",
+    en: "According to one study, people who sleep about seven hours a day are less likely to fall ill than those who sleep less or more. Lack of sleep not only lowers concentration but may also harm health. The researcher states that it is important not to cut sleep time even when busy.",
+    qs: [["Who is less likely to fall ill, according to the study?", ["People who sleep about seven hours", "People who sleep five hours", "People who sleep ten hours", "People who nap in the afternoon"]],
+         ["What does the researcher say is important?", ["Not cutting sleep time even when busy", "Exercising every morning", "Eating breakfast", "Working fewer days"]]] }
+];
+
+window.READING[1] = [
+  { id: "p01",
+    text: "技術の進歩は私たちの生活を便利にした反面、新たな課題も生み出している。例えば、人工知能の普及により、一部の仕事が機械に取って代わられる可能性が指摘されている。しかし、人間にしかできない創造的な仕事の価値は、むしろ高まるのではないかという見方もある。",
+    en: "Technological progress has made our lives convenient, but it has also created new challenges. For example, it has been pointed out that with the spread of artificial intelligence, some jobs may be replaced by machines. However, there is also a view that the value of creative work that only humans can do may actually rise.",
+    qs: [["What challenge is pointed out?", ["Some jobs may be replaced by machines", "Machines are too expensive", "People no longer want convenience", "Technology is advancing too slowly"]],
+         ["What alternative view is mentioned?", ["The value of creative human work may rise", "All jobs will disappear", "Machines will become creative", "Progress should be stopped"]]] },
+  { id: "p02",
+    text: "伝統工芸の世界では、後継者不足が深刻な問題となっている。長い修行を必要とするうえ、収入が安定しないことから、若者が敬遠しがちなのである。だが、近年では海外での評価の高まりを背景に、あえてこの道を選ぶ若者も現れ始めた。",
+    en: "In the world of traditional crafts, a shortage of successors has become a serious problem. Because long training is required and income is unstable, young people tend to avoid it. In recent years, however, against the background of rising reputation overseas, young people who deliberately choose this path have begun to appear.",
+    qs: [["Why do young people tend to avoid traditional crafts?", ["Long training and unstable income", "The work is dangerous", "They cannot find materials", "The tools are expensive"]],
+         ["What change has appeared in recent years?", ["Some young people choose it because of recognition overseas", "More shops have opened", "Training has become shorter", "The government pays higher wages"]]] },
+  { id: "p03",
+    text: "言語は単なる意思疎通の道具ではない。その言語を話す人々の物の見方や価値観までも映し出す鏡である。したがって、外国語を学ぶことは、新しい単語や文法を身につけるにとどまらず、異なる文化への理解を深めることにほかならない。",
+    en: "Language is not merely a tool for communication. It is a mirror that reflects even the worldview and values of those who speak it. Therefore, learning a foreign language is nothing other than deepening one's understanding of a different culture, going beyond merely acquiring new words and grammar.",
+    qs: [["What is language compared to?", ["A mirror reflecting people's worldview and values", "A bridge between countries", "A map of the world", "A tool for business"]],
+         ["What does learning a foreign language amount to, according to the writer?", ["Deepening understanding of a different culture", "Memorising grammar rules", "Improving one's memory", "Making travel cheaper"]]] },
+  { id: "p04",
+    text: "長年にわたり、この地域では大規模な開発が進められてきた。その結果、経済は大いに潤ったものの、貴重な自然が失われつつあるとの懸念が高まっている。住民の間では、開発を続けるべきか、保護を優先すべきかをめぐって、意見が分かれている。",
+    en: "For many years, large-scale development has been pushed ahead in this region. As a result, the economy has benefited greatly, but concern is growing that precious nature is being lost. Among residents, opinions are divided over whether development should continue or protection should take priority.",
+    qs: [["What benefit of development is mentioned?", ["The economy benefited greatly", "More people moved away", "Taxes were lowered", "New schools were built"]],
+         ["What are residents divided over?", ["Whether to continue development or prioritise protection", "Where to build a new station", "How to raise taxes", "Who should lead the town"]]] }
+];

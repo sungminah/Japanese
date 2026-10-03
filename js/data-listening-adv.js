@@ -1,0 +1,57 @@
+// N2 / N1 listening dialogues (no furigana). Same format as data-listening.js.
+window.LISTENING = window.LISTENING || {};
+
+window.LISTENING[2] = [
+  { id: "a01", q: "What will the woman do if there is no reply by tomorrow?",
+    lines: [["m", "例の件ですが、先方から返事は来ましたか。", "About that matter, has a reply come from the other party?"],
+            ["f", "いいえ、まだです。明日までに連絡がなければ、こちらから電話してみます。", "No, not yet. If there's no contact by tomorrow, I'll try calling them myself."],
+            ["m", "そうですね。お願いします。", "I see. Please do."]],
+    c: ["Call the other party", "Send them a letter", "Cancel the plan", "Ask her manager to reply"] },
+  { id: "a02", q: "What does the man agree to add to the proposal?",
+    lines: [["f", "この企画書、もう少し具体的な数字を入れたほうがいいと思うよ。", "I think this proposal would be better with more concrete figures."],
+            ["m", "そうですか。では、先月の売り上げのデータを加えてみます。", "Really? Then I'll try adding last month's sales data."],
+            ["f", "それと、グラフも入れると分かりやすいかな。", "And maybe adding a graph would make it easier to understand."]],
+    c: ["Last month's sales data", "A new title", "Photos of the product", "A list of competitors"] },
+  { id: "a03", q: "Why does the woman choose the Shinkansen?",
+    lines: [["m", "来週の出張ですが、新幹線にしますか、それとも飛行機にしますか。", "For next week's business trip, will you take the Shinkansen or a plane?"],
+            ["f", "新幹線のほうが駅から会場まで近いし、揺れも少ないので、そちらにします。", "The Shinkansen station is closer to the venue and there's less shaking, so I'll take that."]],
+    c: ["It is closer to the venue and smoother", "It is cheaper", "It is faster than a plane", "Her company requires it"] },
+  { id: "a04", q: "When will the package be delivered?",
+    lines: [["f", "すみません、この荷物、今日中に届けてもらえますか。", "Excuse me, can you deliver this package today?"],
+            ["m", "申し訳ございません。本日の受け付けは終了いたしました。明日の午前中でしたら、お届けできますが。", "I'm sorry. Today's acceptance has ended. If tomorrow morning is OK, we can deliver it."],
+            ["f", "では、それでお願いします。", "Then please do that."]],
+    c: ["Tomorrow morning", "Today in the evening", "Tomorrow afternoon", "Next week"] },
+  { id: "a05", q: "What does the woman suggest?",
+    lines: [["m", "最近、疲れが取れなくて困っているんだ。", "Lately I can't shake off my tiredness and it's a problem."],
+            ["f", "仕事が忙しいのもあるだろうけど、運動不足なんじゃない？ 週に一回でも歩くだけで、だいぶ違うよ。", "Work being busy is part of it, but isn't it lack of exercise? Even just walking once a week makes a big difference."]],
+    c: ["Walk or exercise even once a week", "Take a long vacation", "Sleep more at night", "See a doctor"] },
+  { id: "a06", q: "How does the woman plan to deal with the difficulty of leading the project?",
+    lines: [["f", "新しいプロジェクト、リーダーを引き受けることにしたよ。", "I've decided to take on leading the new project."],
+            ["m", "えっ、本当に？ 大変だと思うけど、君なら大丈夫だよ。", "Really? It'll be tough, but you'll be fine."],
+            ["f", "ありがとう。でも、一人では無理だから、みんなに協力してもらうつもり。", "Thanks. But it's impossible alone, so I intend to get everyone's cooperation."]],
+    c: ["Ask everyone for cooperation", "Hire an assistant", "Reduce the project's size", "Work overtime alone"] }
+];
+
+window.LISTENING[1] = [
+  { id: "a01", q: "What do they agree to do from now on?",
+    lines: [["m", "この度は、ご迷惑をおかけして、誠に申し訳ございませんでした。", "I sincerely apologise for the trouble caused this time."],
+            ["f", "いえ、こちらこそ、確認が不十分でした。今後は、事前にお互い連絡を取り合うようにしましょう。", "No, it was our checking that was insufficient. From now on, let's make sure to contact each other beforehand."]],
+    c: ["Contact each other beforehand", "Use a new contract form", "Hold weekly meetings", "Ask a third party to check"] },
+  { id: "a02", q: "What does the professor advise?",
+    lines: [["f", "先生、論文のテーマなんですが、まだ絞り切れていなくて。", "Professor, about my thesis topic, I haven't managed to narrow it down yet."],
+            ["m", "範囲が広すぎるんじゃないかな。まず、自分が一番関心のある点に的を絞って、そこから掘り下げてみたらどうだろう。", "Perhaps the scope is too wide. How about first focusing on the point you're most interested in, and digging deeper from there?"]],
+    c: ["Focus on what interests her most", "Choose a more popular topic", "Read more books first", "Change her supervisor"] },
+  { id: "a03", q: "What does the woman want?",
+    lines: [["m", "このプロジェクト、予算を削減せざるを得ないかもしれない。", "We may have no choice but to cut the budget for this project."],
+            ["f", "しかし、品質を落とすわけにはいきません。他の部分で調整できないでしょうか。", "But we can't lower the quality. Couldn't we adjust other parts?"],
+            ["m", "うーん、検討してみよう。", "Hmm, let's consider it."]],
+    c: ["To keep the quality and adjust elsewhere", "To cancel the project", "To extend the deadline", "To hire more staff"] },
+  { id: "a04", q: "What does the man suggest for next time?",
+    lines: [["f", "展示会の来場者数、予想を大きく下回りました。", "The number of visitors to the exhibition fell well below expectations."],
+            ["m", "天候が悪かったせいもあるだろうが、宣伝が足りなかったんじゃないか。次回はSNSを活用してみよう。", "The bad weather may be part of it, but maybe we didn't advertise enough. Next time let's make use of social media."]],
+    c: ["Use social media for promotion", "Hold it on a different day", "Lower the entry fee", "Choose a bigger venue"] },
+  { id: "a05", q: "What is the woman's criticism of the presentation?",
+    lines: [["m", "彼の発表、どう思った？", "What did you think of his presentation?"],
+            ["f", "内容は興味深かったけど、データの裏付けが弱くて、説得力に欠けていたと思う。", "The content was interesting, but the data backing was weak and I think it lacked persuasiveness."]],
+    c: ["The data was weak, so it lacked persuasiveness", "It was too long", "The content was boring", "The slides were hard to read"] }
+];

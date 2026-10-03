@@ -6,8 +6,8 @@
   const rnd = (n) => Math.floor(Math.random() * n);
 
   // "食べる","たべる" -> "{食|た}べる"  (furigana only over the kanji part)
-  function furi(w, r) {
-    if (!HAN.test(w)) return w;
+  function furi(w, r, lv) {
+    if (lv <= 2 || !HAN.test(w)) return w; // N2 / N1 are shown without furigana
     let i = 0;
     while (i < w.length && i < r.length && w[i] === r[i] && !HAN.test(w[i])) i++;
     let j = 0;
@@ -40,12 +40,12 @@
       if (kind === "v") {
         const meanings = pickOthers(list, i, 3, (o) => !overlap(m, o[2]) && o[2] !== m, (o) => o[2]);
         if (meanings.length === 3)
-          out.push({ id: "v:" + id + ":m", t: "v", lv, d: 1, p: "What does this word mean?", q: furi(w, r), big: true,
+          out.push({ id: "v:" + id + ":m", t: "v", lv, d: 1, p: "What does this word mean?", q: furi(w, r, lv), big: true,
             c: [m, ...meanings.map((o) => o[2])], a: 0, en: full, note: "" });
         const words = pickOthers(list, i, 3, (o) => !overlap(m, o[2]), (o) => o[0] + o[1]);
         if (words.length === 3)
           out.push({ id: "v:" + id + ":w", t: "v", lv, d: 2, p: "Which Japanese word means this?", q: `“${m}”`, cbig: true,
-            c: [furi(w, r), ...words.map((o) => furi(o[0], o[1]))], a: 0, en: full, note: "" });
+            c: [furi(w, r, lv), ...words.map((o) => furi(o[0], o[1], lv))], a: 0, en: full, note: "" });
       } else if (HAN.test(w)) {
         const near = (o) => HAN.test(o[0]) && Math.abs(o[1].length - r.length) <= 1 && o[1] !== r;
         const reads = pickOthers(list, i, 3, near, (o) => o[1]);

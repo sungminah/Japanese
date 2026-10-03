@@ -30,8 +30,8 @@
     { name: "Kanto", lv: "N5", n: 5, cls: "kanto", levels: 5, guardian: 95, range: window.GEN_RANGES[0] },
     { name: "Johto", lv: "N4", n: 4, cls: "johto", levels: 10, guardian: 208, range: window.GEN_RANGES[1] },
     { name: "Hoenn", lv: "N3", n: 3, cls: "hoenn", levels: 15, guardian: 306, range: window.GEN_RANGES[2] },
-    { name: "Sinnoh", lv: "N2", n: 2, cls: "sinnoh", levels: 20 },
-    { name: "Unova", lv: "N1", n: 1, cls: "unova", levels: 25 }
+    { name: "Sinnoh", lv: "N2", n: 2, cls: "sinnoh", levels: 20, guardian: 445, range: window.GEN_RANGES[3] },
+    { name: "Unova", lv: "N1", n: 1, cls: "unova", levels: 25, guardian: 635, range: window.GEN_RANGES[4] }
   ];
   const LEVEL_STEP = 25;   // correct answers per skill level
   const PASS_RATE = 0.8;   // Gym Leader exam: 16 of 20 correct
@@ -72,9 +72,25 @@
     if (t === "g") return written.concat(window.buildGrammarQuestions(lv));
     return t === "v" ? written.concat(window.buildVocabQuestions(lv, "v")) : written;
   }
-  // How many questions each skill has in a region (cached: pools are rebuilt with fresh distractors on every use).
+  // How many questions each skill has in a region (a quick estimate; pools are rebuilt with fresh distractors on every use).
   const sizes = {};
-  const poolSize = (t, r) => { const k = t + r.n; if (!(k in sizes)) sizes[k] = poolOf(t, r).length; return sizes[k]; };
+  function poolSize(t, r) {
+    const lv = r.n, key = t + lv;
+    if (key in sizes) return sizes[key];
+    const list = (o) => (o && o[lv]) || [], has = (w) => /[\u4e00-\u9fff]/.test(w);
+    const written = window.QUESTIONS.filter((q) => q.t === t && q.lv === lv).length;
+    let n = 0;
+    if (t === "g") n = written + 2 * list(window.GRAMMAR).length;
+    else if (t === "v") n = written + 2 * list(window.VOCAB).length;
+    else if (t === "k") {
+      const kan = window.KANJI.filter((x) => (x[5] || 5) === lv);
+      n = 2 * kan.length + 2 * kan.reduce((c, x) => c + x[4].length, 0) + 2 * list(window.VOCAB).filter((w) => has(w[0])).length;
+    }
+    else if (t === "r") n = window.ROMAJI_SENTENCES.filter((x) => (x.lv || 5) === lv).length;
+    else if (t === "d") n = list(window.READING).reduce((c, p) => c + p.qs.length, 0);
+    else if (t === "l") n = list(window.LISTENING).length;
+    return (sizes[key] = n);
+  }
   const activeSkills = (r) => SKILL_KEYS.filter((t) => poolSize(t, r) > 0);
   const contentCount = (region) => SKILL_KEYS.reduce((n, t) => n + poolSize(t, region), 0);
   const examSize = (r) => EXAM_PER_SKILL * activeSkills(r).length;
@@ -219,7 +235,7 @@
       <span class="tag ${q.t}">${SKILLS[q.t].name}</span>${combo >= 2 ? `<span class="chip combo">🔥 combo ×${combo}</span>` : ""}</div>`;
     if (q.t === "r") {
       return head + `<div class="prompt">Type the romaji (romanization) of this sentence</div>
-        <div class="question jp-big">${Ruby.render(q.s, true)}</div>
+        <div class="question jp-big">${Ruby.render(q.s, q.lv > 2)}</div>
         <div class="row answer-row">
           <input id="ans" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. watashi wa gakusei desu">
           <button class="btn r" id="check">Check</button>
@@ -726,7 +742,7 @@
   const dex = () => listScreen("dex");
 
   // ---------- Legend quests: legendaries are earned, they never appear in the wild ----------
-  const SK = { g: "Grammar", v: "Vocabulary", k: "Kanji", r: "Romaji" };
+  const SK = { g: "Grammar", v: "Vocabulary", k: "Kanji", r: "Romaji", d: "Reading", l: "Listening" };
   const regionByCls = (c) => REGIONS.find((r) => r.cls === c);
   const rp = (st, reg, t) => st.prog[reg][t];
   const claimed = (st, ids) => ids.filter((i) => st.legends[i]).length;
@@ -752,7 +768,30 @@
     { id: 383, region: "hoenn", text: "Claim Kyogre and reach Vocabulary Lv 12 in Hoenn", prog: (st) => [(st.legends[382] ? 1 : 0) + (rp(st, "hoenn", "v") >= lvNeed(12) ? 1 : 0), 2] },
     { id: 384, region: "hoenn", text: "Claim Kyogre and Groudon", prog: (st) => [claimed(st, [382, 383]), 2] },
     { id: 385, region: "hoenn", text: "Reach a 21-day streak", prog: (st) => [streakNow(st), 21] },
-    { id: 386, region: "hoenn", text: "Claim every other Hoenn legendary", prog: (st) => [claimed(st, [377, 378, 379, 380, 381, 382, 383, 384, 385]), 9] }
+    { id: 386, region: "hoenn", text: "Claim every other Hoenn legendary", prog: (st) => [claimed(st, [377, 378, 379, 380, 381, 382, 383, 384, 385]), 9] },
+    // Sinnoh (N2)
+    skillQuest(480, "sinnoh", "g", 10), skillQuest(481, "sinnoh", "v", 10), skillQuest(482, "sinnoh", "k", 10),
+    skillQuest(485, "sinnoh", "r", 10), skillQuest(488, "sinnoh", "d", 10), skillQuest(491, "sinnoh", "l", 10),
+    { id: 486, region: "sinnoh", text: "Claim Uxie, Mesprit, Azelf and Heatran", prog: (st) => [claimed(st, [480, 481, 482, 485]), 4] },
+    { id: 483, region: "sinnoh", text: "Earn the Sinnoh badge", prog: (st) => [st.badges.sinnoh ? 1 : 0, 1] },
+    { id: 484, region: "sinnoh", text: "Claim Dialga and reach Vocabulary Lv 15 in Sinnoh", prog: (st) => [(st.legends[483] ? 1 : 0) + (rp(st, "sinnoh", "v") >= lvNeed(15) ? 1 : 0), 2] },
+    { id: 487, region: "sinnoh", text: "Claim Dialga and Palkia", prog: (st) => [claimed(st, [483, 484]), 2] },
+    { id: 489, region: "sinnoh", text: "Register 150 Pokémon in the Pokédex", prog: (st) => [Object.keys(st.dex).length, 150] },
+    { id: 490, region: "sinnoh", text: "Reach a 28-day streak", prog: (st) => [streakNow(st), 28] },
+    { id: 492, region: "sinnoh", text: "Register 300 Pokémon in the Pokédex", prog: (st) => [Object.keys(st.dex).length, 300] },
+    { id: 493, region: "sinnoh", text: "Claim every other Sinnoh legendary", prog: (st) => [claimed(st, [480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492]), 13] },
+    // Unova (N1)
+    skillQuest(638, "unova", "g", 12), skillQuest(639, "unova", "v", 12), skillQuest(640, "unova", "k", 12),
+    skillQuest(641, "unova", "d", 12), skillQuest(642, "unova", "l", 12),
+    { id: 647, region: "unova", text: "Claim Cobalion, Terrakion and Virizion, and reach Romaji Lv 12 in Unova",
+      prog: (st) => [claimed(st, [638, 639, 640]) + (rp(st, "unova", "r") >= lvNeed(12) ? 1 : 0), 4] },
+    { id: 645, region: "unova", text: "Claim Tornadus and Thundurus and earn the Unova badge", prog: (st) => [claimed(st, [641, 642]) + (st.badges.unova ? 1 : 0), 3] },
+    { id: 643, region: "unova", text: "Earn the Unova badge and reach Grammar Lv 20 in Unova", prog: (st) => [(st.badges.unova ? 1 : 0) + (rp(st, "unova", "g") >= lvNeed(20) ? 1 : 0), 2] },
+    { id: 644, region: "unova", text: "Earn the Unova badge and reach Vocabulary Lv 20 in Unova", prog: (st) => [(st.badges.unova ? 1 : 0) + (rp(st, "unova", "v") >= lvNeed(20) ? 1 : 0), 2] },
+    { id: 646, region: "unova", text: "Claim Reshiram and Zekrom", prog: (st) => [claimed(st, [643, 644]), 2] },
+    { id: 494, region: "unova", text: "Register 200 Pokémon in the Pokédex", prog: (st) => [Object.keys(st.dex).length, 200] },
+    { id: 648, region: "unova", text: "Reach a 35-day streak", prog: (st) => [streakNow(st), 35] },
+    { id: 649, region: "unova", text: "Claim every other Unova legendary", prog: (st) => [claimed(st, [494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648]), 12] }
   ];
 
   function claimLegend(id) {

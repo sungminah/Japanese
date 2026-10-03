@@ -6,7 +6,7 @@
 const fs = require("fs"), path = require("path");
 global.window = {};
 const load = (f) => { const p = path.join(__dirname, "..", "js", f); if (fs.existsSync(p)) require(p); };
-["pokemon.js", "data-n5.js", "data-n5-more.js", "data-n4.js", "data-n4-more.js", "data-n3.js", "data-grammar-n3.js", "data-vocab-n5.js", "data-vocab-n4.js", "data-vocab-n3.js", "data-kanji.js", "data-kanji-n4.js", "data-kanji-n3.js", "data-romaji.js", "data-romaji-n4.js", "data-romaji-n4-more.js", "data-romaji-n3.js", "data-reading.js", "data-listening.js", "romaji.js"].forEach(load);
+["pokemon.js", "data-n5.js", "data-n5-more.js", "data-n4.js", "data-n4-more.js", "data-n3.js", "data-n2-vocab.js", "data-grammar-n3.js", "data-grammar-n2.js", "data-grammar-n1.js", "data-vocab-n5.js", "data-vocab-n4.js", "data-vocab-n3.js", "data-vocab-n2.js", "data-vocab-n1.js", "data-kanji.js", "data-kanji-n4.js", "data-kanji-n3.js", "data-romaji.js", "data-romaji-n4.js", "data-romaji-n4-more.js", "data-romaji-n3.js", "data-romaji-n2.js", "data-romaji-n1.js", "data-reading.js", "data-reading-adv.js", "data-listening.js", "data-listening-adv.js", "romaji.js"].forEach(load);
 const W = window;
 let problems = 0;
 const bad = (m) => { console.log("PROBLEM:", m); problems++; };
@@ -15,7 +15,7 @@ const bad = (m) => { console.log("PROBLEM:", m); problems++; };
 const ids = new Set();
 (W.QUESTIONS || []).forEach((q) => {
   if (ids.has(q.id)) bad("duplicate id " + q.id); ids.add(q.id);
-  if (!q.q.includes("＿＿")) bad("no blank: " + q.id);
+  if (!q.q.includes("＿＿") && !q.p) bad("no blank: " + q.id);
   if (new Set(q.c).size !== 4) bad("choices not 4 unique: " + q.id);
   if (!q.en || !q.note) bad("missing en/note: " + q.id);
 });

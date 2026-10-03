@@ -1,0 +1,27 @@
+// N2 sentences for the romaji reading exercise (furigana is stored so the readings can be checked, but it is hidden when you play).
+window.ROMAJI_SENTENCES = (window.ROMAJI_SENTENCES || []).concat([
+  { id: "r401", lv: 2, d: 2, s: "{年齢|ねんれい}にかかわらず、{誰|だれ}でも{参加|さんか}できる。", k: "ねんれい に かかわらず だれ でも さんか できる", en: "Anyone can take part regardless of age." },
+  { id: "r402", lv: 2, d: 3, s: "{収入|しゅうにゅう}に{応|おう}じて、{税金|ぜいきん}の{額|がく}が{決|き}まる。", k: "しゅうにゅう に おうじて ぜいきん の がく が きまる", en: "The amount of tax is decided according to income." },
+  { id: "r403", lv: 2, d: 2, s: "{計画|けいかく}に{沿|そ}って、{作業|さぎょう}を{進|すす}めた。", k: "けいかく に そって さぎょう を すすめた", en: "We proceeded with the work in line with the plan." },
+  { id: "r404", lv: 2, d: 3, s: "{調査|ちょうさ}の{結果|けっか}に{基|もと}づいて、{報告書|ほうこくしょ}を{書|か}いた。", k: "ちょうさ の けっか に もとづいて ほうこくしょ を かいた", en: "I wrote the report based on the survey results." },
+  { id: "r405", lv: 2, d: 2, s: "{友人|ゆうじん}を{通|つう}じて、{彼|かれ}と{知|し}り{合|あ}った。", k: "ゆうじん を つうじて かれ と しりあった", en: "I got to know him through a friend." },
+  { id: "r406", lv: 2, d: 3, s: "{会議|かいぎ}は{三日間|みっかかん}にわたって{行|おこな}われた。", k: "かいぎ は みっかかん に わたって おこなわれた", en: "The conference was held over three days." },
+  { id: "r407", lv: 2, d: 3, s: "{人口|じんこう}の{増加|ぞうか}に{伴|ともな}って、{交通問題|こうつうもんだい}が{深刻|しんこく}になった。", k: "じんこう の ぞうか に ともなって こうつう もんだい が しんこく に なった", en: "As the population grew, traffic problems became serious." },
+  { id: "r408", lv: 2, d: 2, s: "この{町|まち}は{便利|べんり}な{一方|いっぽう}で、{物価|ぶっか}が{高|たか}い。", k: "この まち は べんり な いっぽう で ぶっか が たかい", en: "This town is convenient, but on the other hand prices are high." },
+  { id: "r409", lv: 2, d: 2, s: "{失敗|しっぱい}したとしても、{後悔|こうかい}はしない。", k: "しっぱい した と して も こうかい は しない", en: "Even if I fail, I won't regret it." },
+  { id: "r410", lv: 2, d: 3, s: "その{映画|えいが}を{見|み}て、{泣|な}かずにはいられなかった。", k: "その えいが を みて なかず に は いられなかった", en: "Watching that movie, I couldn't help crying." },
+  { id: "r411", lv: 2, d: 2, s: "それは{噂|うわさ}に{過|す}ぎない。", k: "それ は うわさ に すぎない", en: "That is merely a rumor." },
+  { id: "r412", lv: 2, d: 2, s: "{暑|あつ}い{日|ひ}は{冷|つめ}たいビールに{限|かぎ}る。", k: "あつい ひ は つめたい びーる に かぎる", en: "On a hot day, nothing beats a cold beer." },
+  { id: "r413", lv: 2, d: 3, s: "{彼|かれ}は{英語|えいご}ばかりか、フランス{語|ご}も{話|はな}せる。", k: "かれ は えいご ばかりか ふらんすご も はなせる", en: "He speaks not only English but also French." },
+  { id: "r414", lv: 2, d: 3, s: "{環境問題|かんきょうもんだい}をめぐって、{議論|ぎろん}が{続|つづ}いている。", k: "かんきょう もんだい を めぐって ぎろん が つづいて いる", en: "Debate continues over environmental issues." },
+  { id: "r415", lv: 2, d: 3, s: "もう{少|すこ}しで{電車|でんしゃ}に{乗|の}り{遅|おく}れるところだった。", k: "もう すこし で でんしゃ に のりおくれる ところ だった", en: "I almost missed the train." },
+  { id: "r416", lv: 2, d: 3, s: "{泣|な}いたかと{思|おも}うと、すぐに{笑|わら}い{出|だ}した。", k: "ないた か と おもう と すぐ に わらいだした", en: "He cried, and the next moment he started laughing." },
+  { id: "r417", lv: 2, d: 3, s: "{日本|にほん}に{来|き}て{以来|いらい}、{一度|いちど}も{国|くに}に{帰|かえ}っていない。", k: "にほん に きて いらい いちど も くに に かえって いない", en: "Since coming to Japan, I haven't gone home once." },
+  { id: "r418", lv: 2, d: 3, s: "{合格|ごうかく}できるかどうかは、{君|きみ}の{努力次第|どりょくしだい}だ。", k: "ごうかく できる か どう か は きみ の どりょく しだい だ", en: "Whether you pass depends on your effort." },
+  { id: "r419", lv: 2, d: 3, s: "{努力|どりょく}しない{限|かぎ}り、{合格|ごうかく}はできない。", k: "どりょく しない かぎり ごうかく は できない", en: "Unless you make an effort, you can't pass." },
+  { id: "r420", lv: 2, d: 3, s: "{入院|にゅういん}をきっかけに、{生活|せいかつ}を{見直|みなお}した。", k: "にゅういん を きっかけ に せいかつ を みなおした", en: "Being hospitalised made me reconsider my lifestyle." },
+  { id: "r421", lv: 2, d: 3, s: "{期待|きたい}していただけに、{結果|けっか}が{残念|ざんねん}だった。", k: "きたい して いた だけ に けっか が ざんねん だった", en: "Precisely because I had expected a lot, the result was disappointing." },
+  { id: "r422", lv: 2, d: 3, s: "{好|す}きだからこそ、{厳|きび}しいことを{言|い}う。", k: "すきだ から こそ きびしい こと を いう", en: "It's precisely because I like you that I say harsh things." },
+  { id: "r423", lv: 2, d: 3, s: "{忙|いそが}しくて、{遊|あそ}びに{行|い}くどころではない。", k: "いそがしくて あそび に いく どころ では ない", en: "I'm too busy to even think of going out to play." },
+  { id: "r424", lv: 2, d: 3, s: "{引|ひ}き{受|う}けたからには、{最後|さいご}までやり{遂|と}げる。", k: "ひきうけた から に は さいご まで やりとげる", en: "Now that I've taken it on, I'll see it through." }
+]);
